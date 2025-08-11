@@ -1,0 +1,66 @@
+export interface NodeDefinition {
+  type: string;
+  name: string;
+  category: string;
+  techStack: string[];
+  requirements?: string;
+  config?: Record<string, any>;
+}
+
+export interface NodeCategory {
+  name: string;
+  nodes: NodeDefinition[];
+}
+
+export const NODE_DEFINITIONS: NodeCategory[] = [
+  {
+    name: "Frontend",
+    nodes: [
+      { type: 'frontend-react', name: 'React', category: 'Frontend', techStack: ['React', 'Vite', 'TypeScript'] },
+      { type: 'frontend-nextjs', name: 'Next.js', category: 'Frontend', techStack: ['Next.js', 'React'] },
+      { type: 'frontend-vue', name: 'Vue.js', category: 'Frontend', techStack: ['Vue', 'Vite'] },
+      { type: 'frontend-angular', name: 'Angular', category: 'Frontend', techStack: ['Angular', 'TypeScript'] },
+    ],
+  },
+  {
+    name: "Backend",
+    nodes: [
+      { type: 'backend-express', name: 'Express API', category: 'Backend', techStack: ['Node.js', 'Express', 'TypeScript'] },
+      { type: 'backend-nestjs', name: 'NestJS API', category: 'Backend', techStack: ['NestJS', 'TypeScript'] },
+      { type: 'backend-fastapi', name: 'FastAPI', category: 'Backend', techStack: ['Python', 'FastAPI'] },
+      { type: 'backend-django', name: 'Django', category: 'Backend', techStack: ['Python', 'Django'] },
+      { type: 'backend-spring', name: 'Spring Boot', category: 'Backend', techStack: ['Java', 'Spring Boot'] },
+      { type: 'backend-gofiber', name: 'Go Fiber', category: 'Backend', techStack: ['Go', 'Fiber'] },
+      { type: 'backend-aspnet', name: 'ASP.NET Core', category: 'Backend', techStack: ['.NET', 'C#', 'ASP.NET Core'] },
+    ],
+  },
+  {
+    name: "Data Layer",
+    nodes: [
+      { type: 'db-postgres', name: 'PostgreSQL', category: 'Data Layer', techStack: ['SQL', 'PostgreSQL'] },
+      { type: 'db-sqlserver', name: 'SQL Server', category: 'Data Layer', techStack: ['SQL', 'MS SQL'] },
+      { type: 'db-mysql', name: 'MySQL', category: 'Data Layer', techStack: ['SQL', 'MySQL'] },
+      { type: 'db-mongo', name: 'MongoDB', category: 'Data Layer', techStack: ['NoSQL', 'MongoDB'] },
+      { type: 'db-redis', name: 'Redis', category: 'Data Layer', techStack: ['Cache', 'Redis'] },
+    ],
+  },
+  {
+    name: "Messaging",
+    nodes: [
+        { type: 'msg-kafka', name: 'Kafka', category: 'Messaging', techStack: ['Event Stream', 'Kafka'] },
+        { type: 'msg-rabbitmq', name: 'RabbitMQ', category: 'Messaging', techStack: ['Message Queue', 'RabbitMQ'] },
+    ]
+  },
+  {
+    name: "Security",
+    nodes: [
+        { type: 'sec-auth', name: 'Auth Service', category: 'Security', techStack: ['JWT', 'OAuth2'] },
+    ]
+  },
+  {
+    name: "Structural",
+    nodes: [
+        { type: 'group', name: 'Service Group', category: 'Structural', techStack: ['Container'] },
+    ]
+  }
+];

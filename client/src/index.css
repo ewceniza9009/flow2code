@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.react-flow__attribution {
+    background: rgba(0,0,0,0.5) !important;
+}
+
+.path-animation {
+  stroke-dashoffset: 0;
+  animation: dash 1s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
