@@ -1,4 +1,4 @@
-import { ArrowLeft, Files, Play, Save, Share2, Trash2, PanelLeft, PanelRight, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, Files, Play, Save, Trash2, PanelLeft, PanelRight, Sun, Moon } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
@@ -71,7 +71,7 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
   return (
     <header className="h-12 bg-surface dark:bg-dark-surface border-b border-border dark:border-dark-border flex items-center justify-between px-3 shrink-0">
       <div className="flex items-center gap-2">
-        <Share2 className="text-primary" size={20} />
+        <img src='/flow2code.svg' alt='Flow2Code Logo' className='w-6 h-6' />
         <h1 className="text-lg font-bold text-text-main dark:text-dark-text-main">Flow2Code</h1>
 
         {currentFlowId && (

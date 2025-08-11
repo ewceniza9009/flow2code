@@ -21,7 +21,7 @@ export default function ContextMenu() {
   return (
     <div
       style={{ top: contextMenu.top, left: contextMenu.left }}
-      className="absolute z-50 bg-surface border border-border rounded-md shadow-lg text-sm"
+      className="absolute dark:bg-dark-surface z-50 bg-surface border border-border rounded-md shadow-lg text-sm"
     >
       <ul className="py-1">
         <li onClick={handleBringToFront} className="px-4 py-2 hover:bg-primary/20 cursor-pointer flex items-center gap-2">
