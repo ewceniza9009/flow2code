@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { 
+import {
   Node, Edge, Connection,
-  applyNodeChanges, applyEdgeChanges, 
+  applyNodeChanges, applyEdgeChanges,
   OnNodesChange, OnEdgesChange, OnConnect,
   MarkerType
 } from 'reactflow';
@@ -12,7 +12,7 @@ import { debounce } from 'lodash';
 
 export type NodeData = {
   subflow?: { nodes: Node<NodeData>[], edges: Edge[] };
-  [key:string]: any;
+  [key: string]: any;
 };
 
 interface ContextMenuState { id: string; top: number; left: number; }
@@ -28,6 +28,9 @@ interface AppState {
   isGenerating: boolean;
   contextMenu: ContextMenuState | null;
   currentFlowId: string | null;
+  isDarkMode: boolean;
+  isNodeLibraryOpen: boolean;
+  isPropertiesPanelOpen: boolean;
   loadProjects: () => Promise<void>;
   setActiveProject: (project: Project | null) => void;
   setNodes: (nodes: Node<NodeData>[]) => void;
@@ -40,6 +43,7 @@ interface AppState {
   updateNodeData: (nodeId: string, data: any) => void;
   updateNodeDimensions: (nodeId: string, dimensions: { width: number, height: number }) => void;
   updateEdgeData: (edgeId: string, data: any) => void;
+  swapEdgeDirection: (edgeId: string) => void;
   enterSubflow: (nodeId: string) => void;
   exitSubflow: () => void;
   openContextMenu: (payload: ContextMenuState) => void;
@@ -50,6 +54,9 @@ interface AppState {
   closeNewProjectModal: () => void;
   setIsGenerating: (isGenerating: boolean) => void;
   updateProjectSnapshot: () => void;
+  toggleDarkMode: () => void;
+  setIsNodeLibraryOpen: (isOpen: boolean) => void;
+  setIsPropertiesPanelOpen: (isOpen: boolean) => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -57,6 +64,9 @@ export const useStore = create<AppState>((set, get) => ({
   selectedNode: null, selectedEdge: null,
   isNewProjectModalOpen: false, isGenerating: false,
   contextMenu: null, currentFlowId: null,
+  isDarkMode: true,
+  isNodeLibraryOpen: false,
+  isPropertiesPanelOpen: false,
 
   loadProjects: async () => {
     const projectsFromDb = await db.projects.toArray();
@@ -137,8 +147,24 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   onConnect: (connection: Connection) => {
-    if (!connection.source || !connection.target) return;
-    const newEdge: Edge = { id: uuidv4(), source: connection.source, target: connection.target, type: 'custom', label: "REST", markerEnd: { type: MarkerType.ArrowClosed }, data: { pathType: 'smoothstep', isAnimated: false } };
+    // Explicitly check for all required properties to prevent errors.
+    if (!connection.source || !connection.target || !connection.sourceHandle || !connection.targetHandle) {
+        console.error("Connection failed: Missing source, target, or handle IDs.");
+        return;
+    }
+
+    const newEdge: Edge = {
+        id: uuidv4(),
+        source: connection.source,
+        target: connection.target,
+        sourceHandle: connection.sourceHandle,
+        targetHandle: connection.targetHandle,
+        type: 'custom',
+        label: "REST",
+        markerEnd: { type: MarkerType.ArrowClosed },
+        data: { pathType: 'smoothstep', isAnimated: false }
+    };
+    
     const { currentFlowId, nodes, edges } = get();
     if (currentFlowId === null) {
       set({ edges: [...edges, newEdge] });
@@ -154,7 +180,7 @@ export const useStore = create<AppState>((set, get) => ({
     }
     get().updateProjectSnapshot();
   },
-  
+
   updateNodeData: (nodeId, data) => {
     const updater = (n: Node<NodeData>) => n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n;
     const { currentFlowId, nodes } = get();
@@ -194,57 +220,109 @@ export const useStore = create<AppState>((set, get) => ({
   updateEdgeData: (edgeId, payload) => {
     let updatedEdgeInstance: Edge | null = null;
     const updater = (e: Edge) => {
-        if (e.id === edgeId) {
-            let updatedEdge = { ...e, data: { ...e.data } };
-            
-            if (payload.reverse) {
-              const { source, target } = updatedEdge;
-              updatedEdge.source = target;
-              updatedEdge.target = source;
-            }
-            
-            if (payload.label !== undefined) {
-                updatedEdge.label = payload.label;
-            }
-            if (payload.data) {
-                updatedEdge.data = { ...updatedEdge.data, ...payload.data };
-            }
-            
-            const currentLabel = updatedEdge.label;
-            updatedEdge.data.isAnimated = currentLabel === 'WebSocket' || currentLabel === 'Stream';
-            updatedEdge.markerEnd = currentLabel === 'DB' ? { type: MarkerType.Arrow, width: 20, height: 20 } : { type: MarkerType.ArrowClosed };
-            
-            updatedEdgeInstance = updatedEdge;
-            return updatedEdge;
+      if (e.id === edgeId) {
+        let updatedEdge = { ...e, data: { ...e.data } };
+        
+        if (payload.label !== undefined) {
+          updatedEdge.label = payload.label;
         }
-        return e;
+        if (payload.data) {
+          updatedEdge.data = { ...updatedEdge.data, ...payload.data };
+        }
+
+        const currentLabel = updatedEdge.label;
+        updatedEdge.data.isAnimated = currentLabel === 'WebSocket' || currentLabel === 'Stream';
+        updatedEdge.markerEnd = currentLabel === 'DB' ? { type: MarkerType.Arrow, width: 20, height: 20 } : { type: MarkerType.ArrowClosed };
+
+        updatedEdgeInstance = updatedEdge;
+        return updatedEdge;
+      }
+      return e;
     };
 
     const { currentFlowId, nodes, edges } = get();
 
     if (currentFlowId === null) {
-        const newEdges = edges.map(updater);
-        set(state => ({
-            edges: newEdges,
-            selectedEdge: state.selectedEdge?.id === edgeId ? updatedEdgeInstance : state.selectedEdge,
-        }));
+      const newEdges = edges.map(updater);
+      set(state => ({
+        edges: newEdges,
+        selectedEdge: state.selectedEdge?.id === edgeId ? updatedEdgeInstance : state.selectedEdge,
+      }));
     } else {
-        const newNodes = nodes.map(n => {
-            if (n.id === currentFlowId) {
-                const subflow = n.data.subflow || { nodes: [], edges: [] };
-                const newSubflowEdges = subflow.edges.map(updater);
-                return { ...n, data: { ...n.data, subflow: { ...subflow, edges: newSubflowEdges } } };
-            }
-            return n;
-        });
-        set(state => ({
-            nodes: newNodes,
-            selectedEdge: state.selectedEdge?.id === edgeId ? updatedEdgeInstance : state.selectedEdge,
-        }));
+      const newNodes = nodes.map(n => {
+        if (n.id === currentFlowId) {
+          const subflow = n.data.subflow || { nodes: [], edges: [] };
+          const newSubflowEdges = subflow.edges.map(updater);
+          return { ...n, data: { ...n.data, subflow: { ...subflow, edges: newSubflowEdges } } };
+        }
+        return n;
+      });
+      set(state => ({
+        nodes: newNodes,
+        selectedEdge: state.selectedEdge?.id === edgeId ? updatedEdgeInstance : state.selectedEdge,
+      }));
     }
     get().updateProjectSnapshot();
   },
-  
+
+  swapEdgeDirection: (edgeId: string) => {
+    const { currentFlowId, nodes, edges } = get();
+    
+    if (currentFlowId === null) {
+      const edgeToSwap = edges.find(e => e.id === edgeId);
+      if (!edgeToSwap) return;
+
+      const updatedEdges = edges.map(e => {
+        if (e.id === edgeId) {
+          return {
+            ...e,
+            source: e.target,
+            target: e.source,
+            sourceHandle: e.targetHandle,
+            targetHandle: e.sourceHandle,
+          };
+        }
+        return e;
+      });
+      
+      const newSelectedEdge = updatedEdges.find(e => e.id === edgeId);
+      set({ edges: updatedEdges, selectedEdge: newSelectedEdge || null });
+    } else {
+      const parentNode = nodes.find(n => n.id === currentFlowId);
+      if (!parentNode || !parentNode.data.subflow) return;
+      
+      const subflowEdges = parentNode.data.subflow.edges;
+      const updatedSubflowEdges = subflowEdges.map(e => {
+        if (e.id === edgeId) {
+          return {
+            ...e,
+            source: e.target,
+            target: e.source,
+            sourceHandle: e.targetHandle,
+            targetHandle: e.sourceHandle,
+          };
+        }
+        return e;
+      });
+
+      const newNodes = nodes.map(n => n.id === currentFlowId ? {
+        ...n,
+        data: {
+          ...n.data,
+          subflow: {
+            ...n.data.subflow!,
+            edges: updatedSubflowEdges,
+          }
+        }
+      } : n);
+      
+      const newSelectedEdge = updatedSubflowEdges.find(e => e.id === edgeId);
+      set({ nodes: newNodes, selectedEdge: newSelectedEdge || null });
+    }
+
+    get().updateProjectSnapshot();
+  },
+
   enterSubflow: (nodeId) => {
     const parentNode = get().nodes.find(n => n.id === nodeId);
     if (parentNode && !parentNode.data.subflow) {
@@ -254,15 +332,15 @@ export const useStore = create<AppState>((set, get) => ({
     set({ currentFlowId: nodeId, selectedNode: null, selectedEdge: null });
   },
   exitSubflow: () => set({ currentFlowId: null, selectedNode: null, selectedEdge: null }),
-  
+
   openContextMenu: (payload) => set({ contextMenu: payload }),
   closeContextMenu: () => set({ contextMenu: null }),
 
   bringNodeToFront: (nodeId: string) => {
     const updater = (nodes: Node<NodeData>[]) => {
-        if (nodes.length === 0) return [];
-        const maxZ = Math.max(...nodes.map(n => Number(n.style?.zIndex || 0)));
-        return nodes.map(n => n.id === nodeId ? { ...n, style: { ...n.style, zIndex: maxZ + 1 } } : n);
+      if (nodes.length === 0) return [];
+      const maxZ = Math.max(...nodes.map(n => Number(n.style?.zIndex || 0)));
+      return nodes.map(n => n.id === nodeId ? { ...n, style: { ...n.style, zIndex: maxZ + 1 } } : n);
     };
     const { currentFlowId, nodes } = get();
     if (currentFlowId === null) {
@@ -280,9 +358,9 @@ export const useStore = create<AppState>((set, get) => ({
   },
   sendNodeToBack: (nodeId: string) => {
     const updater = (nodes: Node<NodeData>[]) => {
-        if (nodes.length === 0) return [];
-        const minZ = Math.min(...nodes.map(n => Number(n.style?.zIndex || 0)));
-        return nodes.map(n => n.id === nodeId ? { ...n, style: { ...n.style, zIndex: minZ - 1 } } : n);
+      if (nodes.length === 0) return [];
+      const minZ = Math.min(...nodes.map(n => Number(n.style?.zIndex || 0)));
+      return nodes.map(n => n.id === nodeId ? { ...n, style: { ...n.style, zIndex: minZ - 1 } } : n);
     };
     const { currentFlowId, nodes } = get();
     if (currentFlowId === null) {
@@ -298,7 +376,7 @@ export const useStore = create<AppState>((set, get) => ({
       set({ nodes: newNodes });
     }
   },
-  
+
   openNewProjectModal: () => set({ isNewProjectModalOpen: true }),
   closeNewProjectModal: () => set({ isNewProjectModalOpen: false }),
   setIsGenerating: (isGenerating) => set({ isGenerating }),
@@ -307,8 +385,14 @@ export const useStore = create<AppState>((set, get) => ({
     const { activeProject, nodes, edges } = get();
     if (!activeProject) return;
     const newSnapshot: ProjectSnapshot = { timestamp: new Date(), nodes, edges };
-    db.projects.update(activeProject.id, { 
-        snapshots: [...activeProject.snapshots.slice(0, -1), newSnapshot]
+    db.projects.update(activeProject.id, {
+      snapshots: [...activeProject.snapshots.slice(0, -1), newSnapshot]
     });
   }, 1000),
+
+  toggleDarkMode: () => {
+    set(state => ({ isDarkMode: !state.isDarkMode }));
+  },
+  setIsNodeLibraryOpen: (isOpen) => set({ isNodeLibraryOpen: isOpen }),
+  setIsPropertiesPanelOpen: (isOpen) => set({ isPropertiesPanelOpen: isOpen }),
 }));

@@ -3,6 +3,10 @@ import ReactFlow, {
   Background,
   MiniMap,
   Node,
+  IsValidConnection,
+  Connection,
+  Edge,
+  useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useStore, NodeData } from '@/store/useStore';
@@ -14,8 +18,8 @@ import { GroupNode } from './GroupNode';
 import ContextMenu from './ContextMenu';
 import CustomEdge from './CustomEdge';
 
-const nodeTypes = { 
-  custom: CustomNode, 
+const nodeTypes = {
+  custom: CustomNode,
   group: GroupNode,
 };
 
@@ -39,8 +43,9 @@ export default function FlowCanvas() {
     closeContextMenu,
     enterSubflow,
   } = useStore();
-  
+
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const reactFlowInstance = useReactFlow();
 
   const displayedFlow = useMemo(() => {
     if (currentFlowId === null) {
@@ -60,7 +65,7 @@ export default function FlowCanvas() {
       const nodeDefinition = NODE_DEFINITIONS.flatMap((cat: NodeCategory) => cat.nodes).find(n => n.type === type);
       if (!nodeDefinition) return;
 
-      const position = { x: event.clientX - 250, y: event.clientY - 60 };
+      const position = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
       const isGroup = nodeDefinition.type === 'group';
 
       const newNode: Node<NodeData> = {
@@ -70,23 +75,23 @@ export default function FlowCanvas() {
         data: { ...nodeDefinition, requirements: `A standard ${nodeDefinition.name}.` },
         style: isGroup ? { width: 500, height: 400 } : { width: 256, height: 160 },
       };
-      
+
       const nextNodes = [...displayedFlow.nodes, newNode];
       setNodes(nextNodes);
     },
-    [closeContextMenu, displayedFlow.nodes, setNodes]
+    [closeContextMenu, displayedFlow.nodes, setNodes, reactFlowInstance]
   );
-  
+
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
   }, []);
-  
+
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
       event.preventDefault();
       if (!reactFlowWrapper.current) return;
-      
+
       const pane = reactFlowWrapper.current.getBoundingClientRect();
       setSelectedNode(node);
       openContextMenu({
@@ -97,15 +102,34 @@ export default function FlowCanvas() {
     },
     [openContextMenu, setSelectedNode]
   );
-  
+
   const onNodeDoubleClick = (_: React.MouseEvent, node: Node) => {
     if (node.type !== 'group') enterSubflow(node.id);
   };
+  
+  const isValidConnection: IsValidConnection = useCallback(
+    (connection: Connection | Edge) => {
+      if (!connection.source || !connection.target) {
+        return false;
+      }
+
+      if (connection.source === connection.target) {
+        return false;
+      }
+      
+      if (connection.sourceHandle === connection.targetHandle) {
+        return false;
+      }
+      
+      return true;
+    },
+    []
+  );
 
   if (!activeProject) {
     return <div className="flex items-center justify-center h-full text-text-muted">Create a new project to begin.</div>;
   }
-  
+
   return (
     <div ref={reactFlowWrapper} className="h-full w-full relative" onClick={closeContextMenu} onDrop={onDrop} onDragOver={onDragOver}>
       <ReactFlow
@@ -121,6 +145,7 @@ export default function FlowCanvas() {
         onNodeDoubleClick={onNodeDoubleClick}
         onNodeContextMenu={onNodeContextMenu}
         fitView
+        isValidConnection={isValidConnection}
       >
         <Controls />
         <MiniMap />

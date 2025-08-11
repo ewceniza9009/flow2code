@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 .react-flow__attribution {
-    background: rgba(0,0,0,0.5) !important;
+  background: rgba(0,0,0,0.5) !important;
 }
 
 .path-animation {
@@ -15,4 +15,13 @@
   to {
     stroke-dashoffset: -20;
   }
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none; /* for Internet Explorer, Edge */
+  scrollbar-width: none; /* for Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* for Chrome, Safari, and Opera */
 }

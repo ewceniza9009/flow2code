@@ -1,20 +1,49 @@
 import { useStore } from "@/store/useStore";
-import { X, Share2 as EdgeIcon, ArrowRightLeft } from "lucide-react";
+import { X, Share2 as EdgeIcon, ArrowRightLeft, AlignLeft } from "lucide-react";
+import Mde from 'react-simplemde-editor';
+import "easymde/dist/easymde.min.css";
+import { useMemo } from 'react';
 
 export default function PropertiesPanel() {
-  const { 
+  const {
     selectedNode, setSelectedNode, updateNodeData,
-    selectedEdge, setSelectedEdge, updateEdgeData
+    selectedEdge, setSelectedEdge, updateEdgeData,
+    swapEdgeDirection,
   } = useStore();
-  
+
   const closePanel = () => {
     setSelectedNode(null);
     setSelectedEdge(null);
   };
 
+  const handleRequirementsChange = (value: string) => {
+    if (selectedNode) {
+      updateNodeData(selectedNode.id, { requirements: value });
+    }
+  };
+
+  const mdeOptions = useMemo(() => ({
+    spellChecker: false,
+    status: false,
+    toolbar: [
+        "bold",
+        "italic",
+        "heading",
+        "|",
+        "unordered-list",
+        "ordered-list",
+        "|",
+        "link",
+        "image",
+        "|",
+        "preview"
+    ] as any, // Cast to any to bypass strict type checking
+  }), []);
+
+
   if (!selectedNode && !selectedEdge) {
     return (
-      <div className="h-full bg-surface p-4 text-text-muted text-sm">
+      <div className="h-full bg-surface dark:bg-dark-surface p-3 text-text-muted dark:text-dark-text-muted text-sm">
         <p>Select a node or edge to see its properties.</p>
       </div>
     );
@@ -22,24 +51,36 @@ export default function PropertiesPanel() {
 
   if (selectedNode) {
     return (
-      <div key={selectedNode.id} className="h-full bg-surface p-4 overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-text-main">Node Properties</h2>
-          <button onClick={closePanel} className="text-text-muted hover:text-text-main"><X size={20} /></button>
+      <div key={selectedNode.id} className="h-full bg-surface dark:bg-dark-surface p-3 overflow-y-auto">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-base font-semibold text-text-main dark:text-dark-text-main">Node Properties</h2>
+          <button onClick={closePanel} className="text-text-muted dark:text-dark-text-muted hover:text-text-main dark:hover:text-dark-text-main"><X size={18} /></button>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-text-muted mb-1">Node Name</label>
-            <input 
-              type="text" 
-              defaultValue={selectedNode.data.name} 
-              onBlur={(e) => updateNodeData(selectedNode.id, { name: e.target.value })} 
-              className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+            <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Node Name</label>
+            <input
+              type="text"
+              defaultValue={selectedNode.data.name}
+              onBlur={(e) => updateNodeData(selectedNode.id, { name: e.target.value })}
+              className="w-full bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-text-muted mb-1">Technology</label>
-            <input type="text" value={selectedNode.data.techStack.join(', ')} readOnly className="w-full bg-background border-border rounded-md px-3 py-2 text-sm text-text-muted"/>
+            <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Technology</label>
+            <input type="text" value={selectedNode.data.techStack.join(', ')} readOnly className="w-full bg-background dark:bg-dark-background border-border dark:border-dark-border rounded-md px-2 py-1 text-sm text-text-muted dark:text-dark-text-muted" />
+          </div>
+          <div>
+            <label className="flex items-center gap-1 text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
+              <AlignLeft size={12} />
+              Requirements
+            </label>
+            <Mde
+              value={selectedNode.data.requirements}
+              onChange={handleRequirementsChange}
+              options={mdeOptions}
+              className="markdown-editor"
+            />
           </div>
         </div>
       </div>
@@ -48,59 +89,61 @@ export default function PropertiesPanel() {
 
   if (selectedEdge) {
     const handleEdgeTypeChange = (evt: React.ChangeEvent<HTMLSelectElement>) => {
-        updateEdgeData(selectedEdge.id, { label: evt.target.value });
+      updateEdgeData(selectedEdge.id, { label: evt.target.value });
     };
 
     const handlePathTypeChange = (evt: React.ChangeEvent<HTMLSelectElement>) => {
-        updateEdgeData(selectedEdge.id, { data: { pathType: evt.target.value } });
+      updateEdgeData(selectedEdge.id, { data: { pathType: evt.target.value } });
     };
 
     const handleReverseDirection = () => {
-      updateEdgeData(selectedEdge.id, { reverse: true });
+      if(selectedEdge?.id) {
+        swapEdgeDirection(selectedEdge.id);
+      }
     };
 
     return (
-      <div key={selectedEdge.id} className="h-full bg-surface p-4 overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-text-main flex items-center gap-2"><EdgeIcon size={18}/> Edge Properties</h2>
-          <button onClick={closePanel} className="text-text-muted hover:text-text-main"><X size={20} /></button>
+      <div key={selectedEdge.id} className="h-full bg-surface dark:bg-dark-surface p-3 overflow-y-auto">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-base font-semibold text-text-main dark:text-dark-text-main flex items-center gap-1"><EdgeIcon size={16} /> Edge Properties</h2>
+          <button onClick={closePanel} className="text-text-muted dark:text-dark-text-muted hover:text-text-main dark:hover:text-dark-text-main"><X size={18} /></button>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div>
-              <label className="block text-xs font-medium text-text-muted mb-1">Connection Type</label>
-              <select 
-                value={typeof selectedEdge.label === 'string' ? selectedEdge.label : 'REST'} 
-                onChange={handleEdgeTypeChange}
-                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
-              >
-                  <option>REST</option>
-                  <option>gRPC</option>
-                  <option>WebSocket</option>
-                  <option>Stream</option>
-                  <option>DB</option>
-              </select>
+            <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Connection Type</label>
+            <select
+              value={typeof selectedEdge.label === 'string' ? selectedEdge.label : 'REST'}
+              onChange={handleEdgeTypeChange}
+              className="w-full bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
+            >
+              <option>REST</option>
+              <option>gRPC</option>
+              <option>WebSocket</option>
+              <option>Stream</option>
+              <option>DB</option>
+            </select>
           </div>
           <div>
-              <label className="block text-xs font-medium text-text-muted mb-1">Path Style</label>
-              <select 
-                value={selectedEdge.data?.pathType || 'smoothstep'} 
-                onChange={handlePathTypeChange}
-                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
-              >
-                  <option value="smoothstep">Smooth Step</option>
-                  <option value="bezier">Bezier</option>
-                  <option value="straight">Straight</option>
-              </select>
+            <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Path Style</label>
+            <select
+              value={selectedEdge.data?.pathType || 'smoothstep'}
+              onChange={handlePathTypeChange}
+              className="w-full bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
+            >
+              <option value="smoothstep">Smooth Step</option>
+              <option value="bezier">Bezier</option>
+              <option value="straight">Straight</option>
+            </select>
           </div>
           <div>
-              <label className="block text-xs font-medium text-text-muted mb-1">Actions</label>
-              <button
-                onClick={handleReverseDirection}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-background border border-border rounded-md hover:bg-border transition-colors"
-              >
-                <ArrowRightLeft size={16} />
-                Swap Direction
-              </button>
+            <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Actions</label>
+            <button
+              onClick={handleReverseDirection}
+              className="w-full flex items-center justify-center gap-1 px-2 py-1 text-sm bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md hover:bg-border dark:hover:bg-dark-border transition-colors"
+            >
+              <ArrowRightLeft size={16} />
+              Swap Direction
+            </button>
           </div>
         </div>
       </div>

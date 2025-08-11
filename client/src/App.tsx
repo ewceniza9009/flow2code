@@ -5,13 +5,14 @@ import NewProjectModal from './components/modals/NewProjectModal';
 import { db } from './lib/db';
 
 function App() {
-  const { 
-    isNewProjectModalOpen, 
+  const {
+    isNewProjectModalOpen,
     openNewProjectModal,
     loadProjects,
     setActiveProject,
     setNodes,
     setEdges,
+    isDarkMode,
   } = useStore();
 
   useEffect(() => {
@@ -32,11 +33,19 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
   return (
-    <>
+    <div className="h-screen w-screen flex flex-col">
       {isNewProjectModalOpen && <NewProjectModal />}
       <AppLayout />
-    </>
+    </div>
   );
 }
 
