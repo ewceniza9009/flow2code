@@ -90,7 +90,8 @@ The application will be accessible at `http://localhost:5173`.
 
 ### Screenshot 
 
-
+<img width="1919" height="907" alt="image" src="https://github.com/user-attachments/assets/67ea7fff-20d2-4263-a554-55e330a80a72" />
+<img width="1919" height="912" alt="image" src="https://github.com/user-attachments/assets/6b7dce4a-5860-493a-9657-f33d919070c0" />
 
 ## Usage
 
