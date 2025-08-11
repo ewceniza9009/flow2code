@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 .react-flow__attribution {
-  background: rgba(0,0,0,0.5) !important;
+  background: rgba(255, 253, 253, 0.5) !important;
 }
 
 .path-animation {
