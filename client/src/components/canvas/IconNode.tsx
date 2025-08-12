@@ -4,8 +4,6 @@ import { useStore, NodeData } from '@/store/useStore';
 import { Cpu, Server, Database, Users, Cloud, File, HelpCircle, LucideProps } from 'lucide-react';
 import { ForwardRefExoticComponent, RefAttributes } from 'react';
 
-// Create a type-safe mapping from string names to the actual icon components.
-// This resolves the TypeScript error by being explicit about the types.
 const ICONS: { [key: string]: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> } = {
   Cpu,
   Server,
@@ -18,7 +16,6 @@ const ICONS: { [key: string]: ForwardRefExoticComponent<Omit<LucideProps, "ref">
 const IconNode = ({ id, data, selected }: NodeProps<NodeData>) => {
   const { updateNodeDimensions } = useStore();
   
-  // Select the component from our explicit map, with a safe fallback.
   const IconComponent = ICONS[data.iconName] || HelpCircle;
 
   return (

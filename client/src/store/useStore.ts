@@ -12,7 +12,7 @@ import { debounce } from 'lodash';
 
 export type NodeData = {
   subflow?: { nodes: Node<NodeData>[], edges: Edge[] };
-  [key:string]: any;
+  [key: string]: any;
 };
 
 interface ContextMenuState { id: string; top: number; left: number; }
@@ -44,7 +44,7 @@ interface AppState {
   updateNodeDimensions: (nodeId: string, dimensions: { width: number, height: number }) => void;
   updateEdgeData: (edgeId: string, data: any) => void;
   swapEdgeDirection: (edgeId: string) => void;
-  deleteElement: (elementId: string) => void; // --- ADD THIS ---
+  deleteElement: (elementId: string) => void;
   enterSubflow: (nodeId: string) => void;
   exitSubflow: () => void;
   openContextMenu: (payload: ContextMenuState) => void;
@@ -61,7 +61,6 @@ interface AppState {
 }
 
 export const useStore = create<AppState>((set, get) => ({
-  // ... (all other properties remain the same)
   activeProject: null, projects: [], nodes: [], edges: [],
   selectedNode: null, selectedEdge: null,
   isNewProjectModalOpen: false, isGenerating: false,
@@ -157,7 +156,11 @@ export const useStore = create<AppState>((set, get) => ({
         type: 'custom',
         label: "REST",
         markerEnd: { type: MarkerType.ArrowClosed },
-        data: { pathType: 'smoothstep', isAnimated: false }
+        data: { 
+          pathType: 'smoothstep', 
+          isAnimated: false,
+          animatedIcon: null,
+        }
     };
     const { currentFlowId, nodes, edges } = get();
     if (currentFlowId === null) {
@@ -283,12 +286,9 @@ export const useStore = create<AppState>((set, get) => ({
     }
     get().updateProjectSnapshot();
   },
-
-  // --- ADD THIS ENTIRE FUNCTION ---
   deleteElement: (elementId: string) => {
     const { currentFlowId, nodes, edges, selectedNode } = get();
     const isNode = selectedNode?.id === elementId;
-    
     if (currentFlowId === null) {
         if (isNode) {
             set({ nodes: nodes.filter(n => n.id !== elementId) });
@@ -307,12 +307,9 @@ export const useStore = create<AppState>((set, get) => ({
         });
         set({ nodes: newNodes });
     }
-
     set({ selectedNode: null, selectedEdge: null });
     get().updateProjectSnapshot();
   },
-  // --- END OF NEW FUNCTION ---
-
   enterSubflow: (nodeId) => {
     const parentNode = get().nodes.find(n => n.id === nodeId);
     if (parentNode && !parentNode.data.subflow) {

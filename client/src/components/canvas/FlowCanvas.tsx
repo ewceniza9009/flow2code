@@ -13,7 +13,6 @@ import { useStore, NodeData } from '@/store/useStore';
 import { useCallback, useMemo, useRef } from 'react';
 import CustomNode from './CustomNode';
 import { v4 as uuidv4 } from 'uuid';
-// --- MODIFICATION: Removed unused NodeCategory and NodeDefinition types from this import ---
 import { NODE_DEFINITIONS } from '@/lib/nodes';
 import { GroupNode } from './GroupNode';
 import ContextMenu from './ContextMenu';

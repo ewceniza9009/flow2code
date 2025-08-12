@@ -1,6 +1,49 @@
-// client/src/components/canvas/CustomEdge.tsx
-
 import { EdgeProps, getBezierPath, getSmoothStepPath, getStraightPath } from 'reactflow';
+import { useState, useEffect, useRef } from 'react';
+import { AnimatedIcon } from './AnimatedIcon';
+
+const useAnimation = (pathRef: React.RefObject<SVGPathElement>, speed = 50) => {
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const animationFrameId = useRef<number>();
+
+    useEffect(() => {
+        const path = pathRef.current;
+        if (!path) return;
+
+        let pathLength = 0;
+        try {
+            pathLength = path.getTotalLength();
+        } catch(e) {
+            return;
+        }
+
+        let startTime: number;
+
+        const animate = (timestamp: number) => {
+            if (startTime === undefined) {
+                startTime = timestamp;
+            }
+
+            const elapsed = timestamp - startTime;
+            const distance = (elapsed * speed / 1000) % pathLength;
+            
+            const newPosition = path.getPointAtLength(distance);
+            setPosition({ x: newPosition.x, y: newPosition.y });
+            
+            animationFrameId.current = requestAnimationFrame(animate);
+        };
+
+        animationFrameId.current = requestAnimationFrame(animate);
+
+        return () => {
+            if (animationFrameId.current) {
+                cancelAnimationFrame(animationFrameId.current);
+            }
+        };
+    }, [pathRef, speed]);
+
+    return position;
+}
 
 export default function CustomEdge({
   id,
@@ -14,7 +57,9 @@ export default function CustomEdge({
   markerEnd,
   data,
 }: EdgeProps) {
-  // Determine which path function to use based on edge data
+  const pathRef = useRef<SVGPathElement>(null);
+  const position = useAnimation(pathRef);
+
   const getPath = () => {
     switch (data?.pathType) {
       case 'straight':
@@ -31,7 +76,6 @@ export default function CustomEdge({
 
   return (
     <>
-      {/* Invisible wide path for easier selection */}
       <path
         d={edgePath}
         fill="none"
@@ -39,24 +83,39 @@ export default function CustomEdge({
         strokeWidth={20}
         className="react-flow__edge-interaction"
       />
-      {/* The base, visible path */}
-      <path
-        id={id}
-        style={style}
-        className="react-flow__edge-path"
-        d={edgePath}
-        markerEnd={markerEnd}
-      />
-      {/* A second path for the animation, only rendered if data.isAnimated is true */}
+
+      {!data?.isAnimated && (
+          <path
+            id={id}
+            ref={pathRef}
+            style={style}
+            className="react-flow__edge-path"
+            d={edgePath}
+            markerEnd={markerEnd}
+          />
+      )}
+
       {data?.isAnimated && (
         <path
+          id={id}
+          ref={pathRef}
           d={edgePath}
           fill="none"
           strokeDasharray="5 5"
-          stroke="#4f46e5" // Animation color
+          stroke="#0d9488" 
           strokeWidth={2}
-          className="path-animation" // CSS class for the animation
+          className="path-animation"
+          markerEnd={markerEnd}
         />
+      )}
+      
+      {data?.animatedIcon && position && (
+        <g
+            transform={`translate(${position.x}, ${position.y})`}
+            className="text-primary dark:text-dark-primary"
+        >
+            <AnimatedIcon iconType={data.animatedIcon} />
+        </g>
       )}
     </>
   );

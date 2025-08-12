@@ -3,6 +3,7 @@ import { X, Share2 as EdgeIcon, ArrowRightLeft, AlignLeft, Trash2 } from "lucide
 import Mde from 'react-simplemde-editor';
 import "easymde/dist/easymde.min.css";
 import { useMemo } from 'react';
+import { ANIMATED_ICONS } from "@/lib/constants";
 
 export default function PropertiesPanel() {
   const {
@@ -55,15 +56,12 @@ export default function PropertiesPanel() {
               className="w-full bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
             />
           </div>
-
-          {/* --- MODIFICATION START: Conditionally render these fields --- */}
           {selectedNode.data.techStack && (
             <div>
               <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Technology</label>
               <input type="text" value={selectedNode.data.techStack.join(', ')} readOnly className="w-full bg-background dark:bg-dark-background border-border dark:border-dark-border rounded-md px-2 py-1 text-sm text-text-muted dark:text-dark-text-muted" />
             </div>
           )}
-
           {selectedNode.data.requirements !== undefined && (
             <div>
               <label className="flex items-center gap-1 text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
@@ -78,8 +76,6 @@ export default function PropertiesPanel() {
               />
             </div>
           )}
-          {/* --- MODIFICATION END --- */}
-
           {selectedNode.data.type === 'text-note' && (
              <div>
                 <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Note Content</label>
@@ -118,6 +114,14 @@ export default function PropertiesPanel() {
         swapEdgeDirection(selectedEdge.id);
       }
     };
+    
+    // --- 2. ADD A HANDLER FOR THE NEW DROPDOWN ---
+    const handleAnimatedIconChange = (evt: React.ChangeEvent<HTMLSelectElement>) => {
+        const iconKey = evt.target.value;
+        updateEdgeData(selectedEdge.id, {
+            data: { animatedIcon: iconKey === 'none' ? null : iconKey }
+        });
+    };
 
     return (
       <div key={selectedEdge.id} className="h-full bg-surface dark:bg-dark-surface p-3 overflow-y-auto flex flex-col">
@@ -152,6 +156,20 @@ export default function PropertiesPanel() {
               <option value="straight">Straight</option>
             </select>
           </div>
+          
+          <div>
+            <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Animated Icon</label>
+            <select
+              value={selectedEdge.data?.animatedIcon || 'none'}
+              onChange={handleAnimatedIconChange}
+              className="w-full bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
+            >
+              {ANIMATED_ICONS.map(icon => (
+                <option key={icon.key} value={icon.key}>{icon.label}</option>
+              ))}
+            </select>
+          </div>
+          
           <div>
             <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Actions</label>
             <button
