@@ -13,14 +13,21 @@ import { useStore, NodeData } from '@/store/useStore';
 import { useCallback, useMemo, useRef } from 'react';
 import CustomNode from './CustomNode';
 import { v4 as uuidv4 } from 'uuid';
-import { NODE_DEFINITIONS, NodeCategory } from '@/lib/nodes';
+// --- MODIFICATION: Removed unused NodeCategory and NodeDefinition types from this import ---
+import { NODE_DEFINITIONS } from '@/lib/nodes';
 import { GroupNode } from './GroupNode';
 import ContextMenu from './ContextMenu';
 import CustomEdge from './CustomEdge';
+import TextNode from './TextNode';
+import ShapeNode from './ShapeNode';
+import IconNode from './IconNode';
 
 const nodeTypes = {
   custom: CustomNode,
   group: GroupNode,
+  'text-note': TextNode,
+  shape: ShapeNode,
+  icon: IconNode,
 };
 
 const edgeTypes = {
@@ -59,21 +66,43 @@ export default function FlowCanvas() {
     (event: React.DragEvent) => {
       event.preventDefault();
       closeContextMenu();
+      
       const type = event.dataTransfer.getData('application/reactflow');
-      if (!type) return;
+      const name = event.dataTransfer.getData('application/reactflow-nodename');
+      if (!type || !name) return;
 
-      const nodeDefinition = NODE_DEFINITIONS.flatMap((cat: NodeCategory) => cat.nodes).find(n => n.type === type);
+      const nodeDefinition = NODE_DEFINITIONS.flatMap(c => c.nodes).find(n => n.name === name);
       if (!nodeDefinition) return;
 
       const position = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      
+      const isAnnotation = nodeDefinition.category === 'Annotations';
       const isGroup = nodeDefinition.type === 'group';
+      
+      const initialData: NodeData = { ...nodeDefinition, ...nodeDefinition.data };
 
+      if (nodeDefinition.type === 'text-note') {
+        initialData.text = 'Editable Note';
+      } else if (!isAnnotation && !isGroup) {
+        initialData.requirements = `A standard ${nodeDefinition.name}.`;
+      }
+        
+      let initialStyle = isGroup
+        ? { width: 500, height: 400 }
+        : isAnnotation
+          ? { width: 150, height: 100 }
+          : { width: 256, height: 160 };
+
+      if (nodeDefinition.type === 'icon') {
+        initialStyle = { width: 80, height: 80 };
+      }
+      
       const newNode: Node<NodeData> = {
         id: uuidv4(),
-        type: isGroup ? 'group' : 'custom',
+        type: nodeDefinition.type,
         position,
-        data: { ...nodeDefinition, requirements: `A standard ${nodeDefinition.name}.` },
-        style: isGroup ? { width: 500, height: 400 } : { width: 256, height: 160 },
+        data: initialData,
+        style: initialStyle,
       };
 
       const nextNodes = [...displayedFlow.nodes, newNode];
@@ -81,7 +110,7 @@ export default function FlowCanvas() {
     },
     [closeContextMenu, displayedFlow.nodes, setNodes, reactFlowInstance]
   );
-
+  
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
@@ -104,26 +133,28 @@ export default function FlowCanvas() {
   );
 
   const onNodeDoubleClick = (_: React.MouseEvent, node: Node) => {
-    if (node.type !== 'group') enterSubflow(node.id);
+    if (node.data.category !== 'Annotations' && node.type !== 'group') {
+      enterSubflow(node.id);
+    }
   };
   
   const isValidConnection: IsValidConnection = useCallback(
     (connection: Connection | Edge) => {
-      if (!connection.source || !connection.target) {
+      const allNodes = displayedFlow.nodes;
+      const sourceNode = allNodes.find(n => n.id === connection.source);
+      const targetNode = allNodes.find(n => n.id === connection.target);
+      
+      if (sourceNode?.data.category === 'Annotations' || targetNode?.data.category === 'Annotations') {
         return false;
       }
 
-      if (connection.source === connection.target) {
-        return false;
-      }
-      
-      if (connection.sourceHandle === connection.targetHandle) {
+      if (!connection.source || !connection.target || connection.source === connection.target || connection.sourceHandle === connection.targetHandle) {
         return false;
       }
       
       return true;
     },
-    []
+    [displayedFlow.nodes]
   );
 
   if (!activeProject) {

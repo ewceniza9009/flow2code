@@ -5,6 +5,7 @@ export interface NodeDefinition {
   techStack: string[];
   requirements?: string;
   config?: Record<string, any>;
+  data?: Record<string, any>; 
 }
 
 export interface NodeCategory {
@@ -61,6 +62,24 @@ export const NODE_DEFINITIONS: NodeCategory[] = [
     name: "Structural",
     nodes: [
         { type: 'group', name: 'Service Group', category: 'Structural', techStack: ['Container'] },
+    ]
+  },
+  {
+    name: "Annotations",
+    nodes: [
+        { type: 'text-note', name: 'Text Note', category: 'Annotations', techStack: ['Annotation'] },
+        { type: 'shape', name: 'Rectangle', category: 'Annotations', techStack: ['Shape'], data: { shapeType: 'Rectangle' } },
+        { type: 'shape', name: 'Circle', category: 'Annotations', techStack: ['Shape'], data: { shapeType: 'Circle' } },
+        { type: 'shape', name: 'Diamond', category: 'Annotations', techStack: ['Shape'], data: { shapeType: 'Diamond' } },
+        { type: 'shape', name: 'Cylinder', category: 'Annotations', techStack: ['Shape'], data: { shapeType: 'Cylinder' } },
+        { type: 'shape', name: 'Arrow Right', category: 'Annotations', techStack: ['Shape'], data: { shapeType: 'ArrowRight' } },
+        { type: 'shape', name: 'Arrow Left', category: 'Annotations', techStack: ['Shape'], data: { shapeType: 'ArrowLeft' } },
+        { type: 'icon', name: 'CPU Icon', category: 'Annotations', techStack: ['Icon'], data: { iconName: 'Cpu' } },
+        { type: 'icon', name: 'Server Icon', category: 'Annotations', techStack: ['Icon'], data: { iconName: 'Server' } },
+        { type: 'icon', name: 'Database Icon', category: 'Annotations', techStack: ['Icon'], data: { iconName: 'Database' } },
+        { type: 'icon', name: 'Users Icon', category: 'Annotations', techStack: ['Icon'], data: { iconName: 'Users' } },
+        { type: 'icon', name: 'Cloud Icon', category: 'Annotations', techStack: ['Icon'], data: { iconName: 'Cloud' } },
+        { type: 'icon', name: 'File Icon', category: 'Annotations', techStack: ['Icon'], data: { iconName: 'File' } },
     ]
   }
 ];

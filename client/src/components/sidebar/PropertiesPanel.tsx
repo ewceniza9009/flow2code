@@ -1,5 +1,5 @@
 import { useStore } from "@/store/useStore";
-import { X, Share2 as EdgeIcon, ArrowRightLeft, AlignLeft } from "lucide-react";
+import { X, Share2 as EdgeIcon, ArrowRightLeft, AlignLeft, Trash2 } from "lucide-react";
 import Mde from 'react-simplemde-editor';
 import "easymde/dist/easymde.min.css";
 import { useMemo } from 'react';
@@ -9,6 +9,7 @@ export default function PropertiesPanel() {
     selectedNode, setSelectedNode, updateNodeData,
     selectedEdge, setSelectedEdge, updateEdgeData,
     swapEdgeDirection,
+    deleteElement,
   } = useStore();
 
   const closePanel = () => {
@@ -21,23 +22,11 @@ export default function PropertiesPanel() {
       updateNodeData(selectedNode.id, { requirements: value });
     }
   };
-
+  
   const mdeOptions = useMemo(() => ({
     spellChecker: false,
     status: false,
-    toolbar: [
-        "bold",
-        "italic",
-        "heading",
-        "|",
-        "unordered-list",
-        "ordered-list",
-        "|",
-        "link",
-        "image",
-        "|",
-        "preview"
-    ] as any, // Cast to any to bypass strict type checking
+    toolbar: [ "bold", "italic", "heading", "|", "unordered-list", "ordered-list", "|", "link", "image", "|", "preview" ] as any,
   }), []);
 
 
@@ -51,12 +40,12 @@ export default function PropertiesPanel() {
 
   if (selectedNode) {
     return (
-      <div key={selectedNode.id} className="h-full bg-surface dark:bg-dark-surface p-3 overflow-y-auto">
+      <div key={selectedNode.id} className="h-full bg-surface dark:bg-dark-surface p-3 overflow-y-auto flex flex-col">
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-base font-semibold text-text-main dark:text-dark-text-main">Node Properties</h2>
           <button onClick={closePanel} className="text-text-muted dark:text-dark-text-muted hover:text-text-main dark:hover:text-dark-text-main"><X size={18} /></button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-3 flex-grow">
           <div>
             <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Node Name</label>
             <input
@@ -66,22 +55,50 @@ export default function PropertiesPanel() {
               className="w-full bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
             />
           </div>
-          <div>
-            <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Technology</label>
-            <input type="text" value={selectedNode.data.techStack.join(', ')} readOnly className="w-full bg-background dark:bg-dark-background border-border dark:border-dark-border rounded-md px-2 py-1 text-sm text-text-muted dark:text-dark-text-muted" />
-          </div>
-          <div>
-            <label className="flex items-center gap-1 text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
-              <AlignLeft size={12} />
-              Requirements
-            </label>
-            <Mde
-              value={selectedNode.data.requirements}
-              onChange={handleRequirementsChange}
-              options={mdeOptions}
-              className="markdown-editor"
-            />
-          </div>
+
+          {/* --- MODIFICATION START: Conditionally render these fields --- */}
+          {selectedNode.data.techStack && (
+            <div>
+              <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Technology</label>
+              <input type="text" value={selectedNode.data.techStack.join(', ')} readOnly className="w-full bg-background dark:bg-dark-background border-border dark:border-dark-border rounded-md px-2 py-1 text-sm text-text-muted dark:text-dark-text-muted" />
+            </div>
+          )}
+
+          {selectedNode.data.requirements !== undefined && (
+            <div>
+              <label className="flex items-center gap-1 text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
+                <AlignLeft size={12} />
+                Requirements
+              </label>
+              <Mde
+                value={selectedNode.data.requirements}
+                onChange={handleRequirementsChange}
+                options={mdeOptions}
+                className="markdown-editor"
+              />
+            </div>
+          )}
+          {/* --- MODIFICATION END --- */}
+
+          {selectedNode.data.type === 'text-note' && (
+             <div>
+                <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Note Content</label>
+                <textarea
+                  defaultValue={selectedNode.data.text}
+                  onBlur={(e) => updateNodeData(selectedNode.id, { text: e.target.value })}
+                  className="w-full h-40 bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
+                />
+            </div>
+          )}
+        </div>
+        <div className="mt-4">
+            <button
+                onClick={() => deleteElement(selectedNode.id)}
+                className="w-full flex items-center justify-center gap-1 px-2 py-1 text-sm bg-red-500/10 text-red-400 border border-red-500/20 rounded-md hover:bg-red-500/20 transition-colors"
+            >
+                <Trash2 size={16} />
+                Delete Node
+            </button>
         </div>
       </div>
     );
@@ -103,12 +120,12 @@ export default function PropertiesPanel() {
     };
 
     return (
-      <div key={selectedEdge.id} className="h-full bg-surface dark:bg-dark-surface p-3 overflow-y-auto">
+      <div key={selectedEdge.id} className="h-full bg-surface dark:bg-dark-surface p-3 overflow-y-auto flex flex-col">
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-base font-semibold text-text-main dark:text-dark-text-main flex items-center gap-1"><EdgeIcon size={16} /> Edge Properties</h2>
           <button onClick={closePanel} className="text-text-muted dark:text-dark-text-muted hover:text-text-main dark:hover:text-dark-text-main"><X size={18} /></button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-3 flex-grow">
           <div>
             <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Connection Type</label>
             <select
@@ -145,6 +162,15 @@ export default function PropertiesPanel() {
               Swap Direction
             </button>
           </div>
+        </div>
+        <div className="mt-4">
+            <button
+                onClick={() => deleteElement(selectedEdge.id)}
+                className="w-full flex items-center justify-center gap-1 px-2 py-1 text-sm bg-red-500/10 text-red-400 border border-red-500/20 rounded-md hover:bg-red-500/20 transition-colors"
+            >
+                <Trash2 size={16} />
+                Delete Edge
+            </button>
         </div>
       </div>
     );

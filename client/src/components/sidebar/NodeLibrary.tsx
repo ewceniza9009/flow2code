@@ -4,8 +4,10 @@ import { useState } from 'react';
 export default function NodeLibrary() {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const onDragStart = (event: React.DragEvent, nodeType: string) => {
-    event.dataTransfer.setData('application/reactflow', nodeType);
+  const onDragStart = (event: React.DragEvent, node: NodeDefinition) => {
+    // Pass both the general type and the unique name for identification
+    event.dataTransfer.setData('application/reactflow', node.type);
+    event.dataTransfer.setData('application/reactflow-nodename', node.name);
     event.dataTransfer.effectAllowed = 'move';
   };
 
@@ -38,9 +40,9 @@ export default function NodeLibrary() {
             <div className="grid grid-cols-2 gap-2">
               {category.nodes.map((node: NodeDefinition) => (
                 <div
-                  key={node.type}
+                  key={node.name} // Use name for key since types can be duplicated
                   className="p-2 bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md cursor-grab text-center hover:border-primary transition-colors"
-                  onDragStart={(event) => onDragStart(event, node.type)}
+                  onDragStart={(event) => onDragStart(event, node)}
                   draggable
                 >
                   <p className="text-xs font-medium text-text-main dark:text-dark-text-main">{node.name}</p>

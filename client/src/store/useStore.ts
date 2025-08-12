@@ -12,7 +12,7 @@ import { debounce } from 'lodash';
 
 export type NodeData = {
   subflow?: { nodes: Node<NodeData>[], edges: Edge[] };
-  [key: string]: any;
+  [key:string]: any;
 };
 
 interface ContextMenuState { id: string; top: number; left: number; }
@@ -44,6 +44,7 @@ interface AppState {
   updateNodeDimensions: (nodeId: string, dimensions: { width: number, height: number }) => void;
   updateEdgeData: (edgeId: string, data: any) => void;
   swapEdgeDirection: (edgeId: string) => void;
+  deleteElement: (elementId: string) => void; // --- ADD THIS ---
   enterSubflow: (nodeId: string) => void;
   exitSubflow: () => void;
   openContextMenu: (payload: ContextMenuState) => void;
@@ -60,6 +61,7 @@ interface AppState {
 }
 
 export const useStore = create<AppState>((set, get) => ({
+  // ... (all other properties remain the same)
   activeProject: null, projects: [], nodes: [], edges: [],
   selectedNode: null, selectedEdge: null,
   isNewProjectModalOpen: false, isGenerating: false,
@@ -73,7 +75,6 @@ export const useStore = create<AppState>((set, get) => ({
     set({ projects: projectsFromDb });
   },
   setActiveProject: (project) => set({ activeProject: project }),
-
   setNodes: (nodes) => {
     const { currentFlowId } = get();
     if (currentFlowId === null) {
@@ -106,10 +107,8 @@ export const useStore = create<AppState>((set, get) => ({
       }));
     }
   },
-
   setSelectedNode: (node) => set({ selectedNode: node, selectedEdge: null }),
   setSelectedEdge: (edge) => set({ selectedEdge: edge, selectedNode: null }),
-
   onNodesChange: (changes) => {
     const { currentFlowId, nodes } = get();
     if (currentFlowId === null) {
@@ -127,7 +126,6 @@ export const useStore = create<AppState>((set, get) => ({
     }
     get().updateProjectSnapshot();
   },
-
   onEdgesChange: (changes) => {
     const { currentFlowId, nodes, edges } = get();
     if (currentFlowId === null) {
@@ -145,14 +143,11 @@ export const useStore = create<AppState>((set, get) => ({
     }
     get().updateProjectSnapshot();
   },
-
   onConnect: (connection: Connection) => {
-    // Explicitly check for all required properties to prevent errors.
     if (!connection.source || !connection.target || !connection.sourceHandle || !connection.targetHandle) {
         console.error("Connection failed: Missing source, target, or handle IDs.");
         return;
     }
-
     const newEdge: Edge = {
         id: uuidv4(),
         source: connection.source,
@@ -164,7 +159,6 @@ export const useStore = create<AppState>((set, get) => ({
         markerEnd: { type: MarkerType.ArrowClosed },
         data: { pathType: 'smoothstep', isAnimated: false }
     };
-    
     const { currentFlowId, nodes, edges } = get();
     if (currentFlowId === null) {
       set({ edges: [...edges, newEdge] });
@@ -180,7 +174,6 @@ export const useStore = create<AppState>((set, get) => ({
     }
     get().updateProjectSnapshot();
   },
-
   updateNodeData: (nodeId, data) => {
     const updater = (n: Node<NodeData>) => n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n;
     const { currentFlowId, nodes } = get();
@@ -198,7 +191,6 @@ export const useStore = create<AppState>((set, get) => ({
     }
     get().updateProjectSnapshot();
   },
-
   updateNodeDimensions: (nodeId, dimensions) => {
     const updater = (n: Node<NodeData>) => n.id === nodeId ? { ...n, style: { ...n.style, ...dimensions } } : n;
     const { currentFlowId, nodes } = get();
@@ -216,32 +208,26 @@ export const useStore = create<AppState>((set, get) => ({
     }
     get().updateProjectSnapshot();
   },
-
   updateEdgeData: (edgeId, payload) => {
     let updatedEdgeInstance: Edge | null = null;
     const updater = (e: Edge) => {
       if (e.id === edgeId) {
         let updatedEdge = { ...e, data: { ...e.data } };
-        
         if (payload.label !== undefined) {
           updatedEdge.label = payload.label;
         }
         if (payload.data) {
           updatedEdge.data = { ...updatedEdge.data, ...payload.data };
         }
-
         const currentLabel = updatedEdge.label;
         updatedEdge.data.isAnimated = currentLabel === 'WebSocket' || currentLabel === 'Stream';
         updatedEdge.markerEnd = currentLabel === 'DB' ? { type: MarkerType.Arrow, width: 20, height: 20 } : { type: MarkerType.ArrowClosed };
-
         updatedEdgeInstance = updatedEdge;
         return updatedEdge;
       }
       return e;
     };
-
     const { currentFlowId, nodes, edges } = get();
-
     if (currentFlowId === null) {
       const newEdges = edges.map(updater);
       set(state => ({
@@ -264,16 +250,12 @@ export const useStore = create<AppState>((set, get) => ({
     }
     get().updateProjectSnapshot();
   },
-
   swapEdgeDirection: (edgeId: string) => {
     const { currentFlowId, nodes, edges } = get();
-
     const swapLogic = (edge: Edge): Edge => {
       if (edge.id !== edgeId) return edge;
-      
       const newSourceHandle = edge.targetHandle?.replace('target', 'source');
       const newTargetHandle = edge.sourceHandle?.replace('source', 'target');
-      
       return {
         ...edge,
         source: edge.target,
@@ -282,7 +264,6 @@ export const useStore = create<AppState>((set, get) => ({
         targetHandle: newTargetHandle,
       };
     };
-    
     if (currentFlowId === null) {
       const updatedEdges = edges.map(swapLogic);
       const newSelectedEdge = updatedEdges.find(e => e.id === edgeId);
@@ -300,9 +281,37 @@ export const useStore = create<AppState>((set, get) => ({
       const newSelectedEdge = parentNode?.data.subflow?.edges.find(e => e.id === edgeId);
       set({ nodes: newNodes, selectedEdge: newSelectedEdge || null });
     }
-
     get().updateProjectSnapshot();
   },
+
+  // --- ADD THIS ENTIRE FUNCTION ---
+  deleteElement: (elementId: string) => {
+    const { currentFlowId, nodes, edges, selectedNode } = get();
+    const isNode = selectedNode?.id === elementId;
+    
+    if (currentFlowId === null) {
+        if (isNode) {
+            set({ nodes: nodes.filter(n => n.id !== elementId) });
+        } else {
+            set({ edges: edges.filter(e => e.id !== elementId) });
+        }
+    } else {
+        const newNodes = nodes.map(n => {
+            if (n.id === currentFlowId) {
+                const subflow = n.data.subflow || { nodes: [], edges: [] };
+                const newSubflowNodes = isNode ? subflow.nodes.filter(sn => sn.id !== elementId) : subflow.nodes;
+                const newSubflowEdges = !isNode ? subflow.edges.filter(se => se.id !== elementId) : subflow.edges;
+                return { ...n, data: { ...n.data, subflow: { nodes: newSubflowNodes, edges: newSubflowEdges } } };
+            }
+            return n;
+        });
+        set({ nodes: newNodes });
+    }
+
+    set({ selectedNode: null, selectedEdge: null });
+    get().updateProjectSnapshot();
+  },
+  // --- END OF NEW FUNCTION ---
 
   enterSubflow: (nodeId) => {
     const parentNode = get().nodes.find(n => n.id === nodeId);
@@ -313,10 +322,8 @@ export const useStore = create<AppState>((set, get) => ({
     set({ currentFlowId: nodeId, selectedNode: null, selectedEdge: null });
   },
   exitSubflow: () => set({ currentFlowId: null, selectedNode: null, selectedEdge: null }),
-
   openContextMenu: (payload) => set({ contextMenu: payload }),
   closeContextMenu: () => set({ contextMenu: null }),
-
   bringNodeToFront: (nodeId: string) => {
     const updater = (nodes: Node<NodeData>[]) => {
       if (nodes.length === 0) return [];
@@ -357,11 +364,9 @@ export const useStore = create<AppState>((set, get) => ({
       set({ nodes: newNodes });
     }
   },
-
   openNewProjectModal: () => set({ isNewProjectModalOpen: true }),
   closeNewProjectModal: () => set({ isNewProjectModalOpen: false }),
   setIsGenerating: (isGenerating) => set({ isGenerating }),
-
   updateProjectSnapshot: debounce(() => {
     const { activeProject, nodes, edges } = get();
     if (!activeProject) return;
@@ -370,7 +375,6 @@ export const useStore = create<AppState>((set, get) => ({
       snapshots: [...activeProject.snapshots.slice(0, -1), newSnapshot]
     });
   }, 1000),
-
   toggleDarkMode: () => {
     set(state => ({ isDarkMode: !state.isDarkMode }));
   },

@@ -1,8 +1,9 @@
 import { useStore } from '@/store/useStore';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUp, ArrowDown, Trash2 } from 'lucide-react'; // --- 1. IMPORT TRASH ICON ---
 
 export default function ContextMenu() {
-  const { contextMenu, closeContextMenu, bringNodeToFront, sendNodeToBack } = useStore();
+  // --- 2. GET THE NEW DELETE FUNCTION ---
+  const { contextMenu, closeContextMenu, bringNodeToFront, sendNodeToBack, deleteElement } = useStore();
 
   if (!contextMenu) {
     return null;
@@ -17,6 +18,12 @@ export default function ContextMenu() {
     sendNodeToBack(contextMenu.id);
     closeContextMenu();
   };
+  
+  // --- 3. CREATE THE DELETE HANDLER ---
+  const handleDelete = () => {
+    deleteElement(contextMenu.id);
+    closeContextMenu();
+  };
 
   return (
     <div
@@ -29,6 +36,11 @@ export default function ContextMenu() {
         </li>
         <li onClick={handleSendToBack} className="px-4 py-2 hover:bg-primary/20 cursor-pointer flex items-center gap-2">
           <ArrowDown size={16} /> Send to Back
+        </li>
+        {/* --- 4. ADD THE DELETE OPTION TO THE MENU --- */}
+        <div className="my-1 h-px bg-border" />
+        <li onClick={handleDelete} className="px-4 py-2 hover:bg-red-500/20 text-red-400 cursor-pointer flex items-center gap-2">
+            <Trash2 size={16} /> Delete
         </li>
       </ul>
     </div>
