@@ -13,6 +13,10 @@ function App() {
     setNodes,
     setEdges,
     isDarkMode,
+    isNodeLibraryOpen,
+    isPropertiesPanelOpen,
+    setIsNodeLibraryOpen,
+    setIsPropertiesPanelOpen,
   } = useStore();
 
   useEffect(() => {
@@ -30,7 +34,6 @@ function App() {
       }
     };
     initializeApp();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -40,6 +43,27 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
+  
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      
+      if (event.ctrlKey && event.key === 'g') {
+        event.preventDefault(); 
+        setIsNodeLibraryOpen(!isNodeLibraryOpen);
+      }
+      
+      if (event.ctrlKey && event.key === 'h') {
+        event.preventDefault();
+        setIsPropertiesPanelOpen(!isPropertiesPanelOpen);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isNodeLibraryOpen, isPropertiesPanelOpen, setIsNodeLibraryOpen, setIsPropertiesPanelOpen]);
 
   return (
     <div className="h-screen w-screen flex flex-col">
