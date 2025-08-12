@@ -193,7 +193,7 @@ export const useStore = create<AppState>((set, get) => ({
       type: 'custom',
       label: "REST",
       markerEnd: { type: MarkerType.ArrowClosed },
-      data: { pathType: 'smoothstep', isAnimated: false, animatedIcon: null, animatedIconColor: '#818cf8' }
+      data: { pathType: 'smoothstep', isAnimated: false, animatedIcon: null, animatedIconColor: '#818cf8', endpoints: [] }
     };
     set(state => {
         if (state.currentFlowId === null) {
