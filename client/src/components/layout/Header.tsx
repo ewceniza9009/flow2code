@@ -1,4 +1,4 @@
-import { ArrowLeft, Files, Play, Trash2, PanelLeft, PanelRight, Sun, Moon, Sparkles, ChevronDown, Search, Pencil } from 'lucide-react';
+import { ArrowLeft, Files, Play, Trash2, PanelLeft, PanelRight, Sun, Moon, Sparkles, ChevronDown, Search, Pencil, Settings } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
@@ -27,6 +27,7 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
     toggleDarkMode,
     setIsSuggestionsPanelOpen,
     renameProject,
+    openSettingsModal,
   } = useStore();
 
   const projects = useLiveQuery(() => db.projects.toArray());
@@ -40,7 +41,7 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
   
   const projectListRef = useRef<HTMLDivElement>(null);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
-  const renameInputRef = useRef<HTMLInputElement>(null);
+  const projectNameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (activeProject) {
@@ -49,8 +50,8 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
   }, [activeProject]);
 
   useEffect(() => {
-    if (isRenamingActive && renameInputRef.current) {
-      renameInputRef.current.focus();
+    if (isRenamingActive && projectNameRef.current) {
+      projectNameRef.current.focus();
     }
   }, [isRenamingActive]);
 
@@ -58,12 +59,11 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
     const handleClickOutside = (event: MouseEvent) => {
       if (projectListRef.current && !projectListRef.current.contains(event.target as Node)) {
         setIsProjectsListOpen(false);
-        setSearchTerm('');
       }
       if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target as Node)) {
         setIsActionsMenuOpen(false);
       }
-      if (isRenamingActive && renameInputRef.current && !renameInputRef.current.contains(event.target as Node)) {
+      if (isRenamingActive && projectNameRef.current && !projectNameRef.current.contains(event.target as Node)) {
         handleRenameBlur();
       }
     };
@@ -165,7 +165,7 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
             <div className="flex items-center gap-2">
               {isRenamingActive ? (
                 <input
-                  ref={renameInputRef}
+                  ref={projectNameRef}
                   type="text"
                   value={projectNameInput}
                   onChange={(e) => setProjectNameInput(e.target.value)}
@@ -219,7 +219,7 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
                   onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)}
                   className="flex items-center gap-1 px-2 py-1 text-sm bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md hover:bg-border dark:hover:bg-dark-border transition-colors"
                 >
-                  Project Actions <ChevronDown size={14} className={`transition-transform ${isActionsMenuOpen ? 'rotate-180' : ''}`} />
+                  <Settings size={16} /> Actions <ChevronDown size={14} className={`transition-transform ${isActionsMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isActionsMenuOpen && (
                   <div className="absolute top-11 left-0 mt-2 z-20 flex flex-col p-2 bg-surface dark:bg-dark-surface border border-border dark:border-dark-border rounded-md shadow-lg w-48">
@@ -240,6 +240,13 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
                       className="flex items-center gap-2 px-2 py-1 text-sm rounded-md hover:bg-red-500/10 text-red-400 transition-colors"
                     >
                       <Trash2 size={16} /> Delete Project
+                    </button>
+                    <div className="my-1 h-px bg-border dark:bg-dark-border" />
+                    <button 
+                      onClick={openSettingsModal} 
+                      className="flex items-center gap-2 px-2 py-1 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"
+                    >
+                      <Settings size={16} /> Settings
                     </button>
                   </div>
                 )}

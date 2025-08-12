@@ -5,7 +5,7 @@ import {
   OnNodesChange, OnEdgesChange, OnConnect,
   MarkerType
 } from 'reactflow';
-import { Project, ProjectSnapshot } from '@/types/project';
+import { Project, ProjectSnapshot, ProjectSettings } from '@/types/project';
 import { db } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import { debounce } from 'lodash';
@@ -42,6 +42,8 @@ interface AppState {
   isPropertiesPanelOpen: boolean;
   isSuggestionsPanelOpen: boolean;
   suggestions: AISuggestion[];
+  projectSettings: ProjectSettings;
+  isSettingsModalOpen: boolean;
   loadProjects: () => Promise<void>;
   setActiveProject: (project: Project | null) => void;
   setNodes: (nodes: Node<NodeData>[]) => void;
@@ -73,6 +75,9 @@ interface AppState {
   setIsPropertiesPanelOpen: (isOpen: boolean) => void;
   setIsSuggestionsPanelOpen: (isOpen: boolean) => void;
   setSuggestions: (suggestions: AISuggestion[]) => void;
+  setProjectSettings: (settings: ProjectSettings) => void;
+  openSettingsModal: () => void;
+  closeSettingsModal: () => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -85,12 +90,23 @@ export const useStore = create<AppState>((set, get) => ({
   isPropertiesPanelOpen: false,
   isSuggestionsPanelOpen: false,
   suggestions: [],
+  projectSettings: {
+    cloudProvider: 'Other',
+    deploymentStrategy: 'Docker',
+    cicdTooling: '',
+  },
+  isSettingsModalOpen: false,
 
   loadProjects: async () => {
     const projectsFromDb = await db.projects.toArray();
     set({ projects: projectsFromDb });
   },
-  setActiveProject: (project) => set({ activeProject: project }),
+  setActiveProject: (project) => {
+    set({
+      activeProject: project,
+      projectSettings: project?.settings || { cloudProvider: 'Other', deploymentStrategy: 'Docker', cicdTooling: '' }
+    });
+  },
 
   setNodes: (nodes) => {
     const { currentFlowId } = get();
@@ -485,6 +501,7 @@ export const useStore = create<AppState>((set, get) => ({
 
     const newSnapshot: ProjectSnapshot = { timestamp: new Date(), nodes, edges };
     
+    // Limit snapshots to the latest 5 by taking a slice of the array
     const updatedSnapshots = [...projectInDb.snapshots, newSnapshot].slice(-5);
     
     await db.projects.update(activeProject.id, {
@@ -498,6 +515,7 @@ export const useStore = create<AppState>((set, get) => ({
 
     await db.projects.update(projectId, { name: newName });
     
+    // Update the state with the new name
     const updatedProjects = projects.map(p =>
       p.id === projectId ? { ...p, name: newName } : p
     );
@@ -514,4 +532,7 @@ export const useStore = create<AppState>((set, get) => ({
   setIsPropertiesPanelOpen: (isOpen) => set({ isPropertiesPanelOpen: isOpen }),
   setIsSuggestionsPanelOpen: (isOpen) => set({ isSuggestionsPanelOpen: isOpen }),
   setSuggestions: (suggestions) => set({ suggestions }),
+  setProjectSettings: (settings: ProjectSettings) => set({ projectSettings: settings }),
+  openSettingsModal: () => set({ isSettingsModalOpen: true }),
+  closeSettingsModal: () => set({ isSettingsModalOpen: false }),
 }));

@@ -4,9 +4,10 @@ import FlowCanvas from '../canvas/FlowCanvas';
 import PropertiesPanel from "../sidebar/PropertiesPanel";
 import { ReactFlowProvider } from "reactflow";
 import { useStore } from '@/store/useStore';
+import ProjectSettingsModal from '../modals/ProjectSettingsModal';
 
 export default function AppLayout() {
-  const { isNodeLibraryOpen, isPropertiesPanelOpen, setIsNodeLibraryOpen, setIsPropertiesPanelOpen } = useStore();
+  const { isNodeLibraryOpen, isPropertiesPanelOpen, setIsNodeLibraryOpen, setIsPropertiesPanelOpen, isSettingsModalOpen } = useStore();
 
   const toggleLeftPanel = () => {
     setIsNodeLibraryOpen(!isNodeLibraryOpen);
@@ -31,10 +32,11 @@ export default function AppLayout() {
         )}
 
         {isPropertiesPanelOpen && (
-          <div className="absolute top-0 right-0 h-full w-[300px] z-10 transition-transform">
+          <div className="absolute top-0 right-0 h-full w-[400px] z-10 transition-transform">
             <PropertiesPanel />
           </div>
         )}
+        {isSettingsModalOpen && <ProjectSettingsModal />}
       </div>
     </div>
   );

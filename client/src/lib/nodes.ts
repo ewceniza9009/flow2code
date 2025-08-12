@@ -42,7 +42,7 @@ export const NODE_DEFINITIONS: NodeCategory[] = [
     name: "Data Layer",
     nodes: [
       { type: 'db-postgres', name: 'PostgreSQL', category: 'Data Layer', techStack: ['SQL', 'PostgreSQL'], config: { databaseName: 'db', username: 'user', password: 'password' } },
-      { type: 'db-sqlserver', name: 'SQL Server', category: 'Data Layer', techStack: ['SQL', 'MS SQL'] },
+      { type: 'db-sqlserver', name: 'SQL Server', category: 'Data Layer', techStack: ['SQL', 'MS SQL'], config: { databaseName: 'db', username: 'user', password: 'password' } },
       { type: 'db-mysql', name: 'MySQL', category: 'Data Layer', techStack: ['SQL', 'MySQL'] },
       { type: 'db-mongo', name: 'MongoDB', category: 'Data Layer', techStack: ['NoSQL', 'MongoDB'] },
       { type: 'db-redis', name: 'Redis', category: 'Data Layer', techStack: ['Cache', 'Redis'] },

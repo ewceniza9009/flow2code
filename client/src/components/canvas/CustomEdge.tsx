@@ -88,7 +88,7 @@ export default function CustomEdge({
           <path
             id={id}
             ref={pathRef}
-            style={style}
+            style={{ ...style, strokeWidth: style.strokeWidth || 2 }} // Added a default strokeWidth for non-animated edges
             className="react-flow__edge-path"
             d={edgePath}
             markerEnd={markerEnd}

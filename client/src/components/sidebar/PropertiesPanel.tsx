@@ -1,9 +1,76 @@
-import { useStore } from "@/store/useStore";
-import { X, Share2 as EdgeIcon, ArrowRightLeft, AlignLeft, Trash2, Palette } from "lucide-react";
+import { useStore, NodeData } from "@/store/useStore";
+import { X, Share2 as EdgeIcon, ArrowRightLeft, AlignLeft, Trash2, Palette, Terminal, Code } from "lucide-react";
 import Mde from 'react-simplemde-editor';
 import "easymde/dist/easymde.min.css";
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ANIMATED_ICONS } from "@/lib/constants";
+import React from "react";
+import { Node, Edge } from "reactflow";
+import { NODE_DEFINITIONS } from "@/lib/nodes";
+
+const ConfigPanel = ({ node, updateNodeData }: { node: Node<NodeData>; updateNodeData: (id: string, data: any) => void }) => {
+  const [config, setConfig] = useState(JSON.stringify(node.data?.config, null, 2));
+
+  const handleConfigChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setConfig(e.target.value);
+  };
+
+  const handleConfigBlur = () => {
+    try {
+      const newConfig = JSON.parse(config);
+      updateNodeData(node.id, { config: newConfig });
+    } catch (error) {
+      console.error('Invalid JSON in config editor:', error);
+      // Optionally, show an error message to the user
+    }
+  };
+
+  return (
+    <div className="mt-4">
+      <label className="flex items-center gap-1 text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
+        <Code size={12} />
+        Configuration (JSON)
+      </label>
+      <textarea
+        value={config}
+        onChange={handleConfigChange}
+        onBlur={handleConfigBlur}
+        rows={6}
+        className="w-full bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-primary focus:outline-none font-mono"
+      />
+    </div>
+  );
+};
+
+const EdgeDetailsPanel = ({ edge, updateEdgeData }: { edge: Edge; updateEdgeData: (id: string, payload: { data?: any; }) => void }) => {
+  const [endpoints, setEndpoints] = useState(edge.data?.endpoints?.join('\n') || '');
+
+  const handleEndpointsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEndpoints(e.target.value);
+  };
+
+  const handleEndpointsBlur = () => {
+    const newEndpoints = endpoints.split('\n').filter(Boolean);
+    updateEdgeData(edge.id, { data: { ...edge.data, endpoints: newEndpoints } });
+  };
+  
+  return (
+    <div className="mt-4">
+      <label className="flex items-center gap-1 text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
+        <Terminal size={12} />
+        API Endpoints (one per line)
+      </label>
+      <textarea
+        value={endpoints}
+        onChange={handleEndpointsChange}
+        onBlur={handleEndpointsBlur}
+        rows={4}
+        className="w-full bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-primary focus:outline-none font-mono"
+      />
+    </div>
+  );
+};
+
 
 export default function PropertiesPanel() {
   const {
@@ -52,6 +119,10 @@ export default function PropertiesPanel() {
       ? selectedNode.data?.fillColor === 'transparent'
       : selectedNode.style?.backgroundColor === 'transparent';
     const opacity = isShapeNode ? selectedNode.data?.opacity ?? 1 : 1; // Default opacity to 1
+    
+    // Check if the node's type has a config property defined in NODE_DEFINITIONS
+    const nodeDefinition = NODE_DEFINITIONS.flatMap(cat => cat.nodes).find(n => n.type === selectedNode.data?.type);
+    const hasConfig = nodeDefinition?.config !== undefined;
 
     return (
       <div key={selectedNode.id} className="h-full bg-surface dark:bg-dark-surface p-3 overflow-y-auto flex flex-col">
@@ -197,6 +268,8 @@ export default function PropertiesPanel() {
               />
             </div>
           )}
+          
+          {hasConfig && <ConfigPanel node={selectedNode} updateNodeData={updateNodeData} />}
 
           {selectedNode.data?.requirements !== undefined && (
             <div>
@@ -283,6 +356,8 @@ export default function PropertiesPanel() {
         });
       }
     };
+    
+    const hasEndpoints = selectedEdge.data?.endpoints !== undefined;
 
     return (
       <div key={selectedEdge.id} className="h-full bg-surface dark:bg-dark-surface p-3 overflow-y-auto flex flex-col">
@@ -328,6 +403,8 @@ export default function PropertiesPanel() {
               <option value="straight">Straight</option>
             </select>
           </div>
+          
+          {hasEndpoints && <EdgeDetailsPanel edge={selectedEdge} updateEdgeData={updateEdgeData} />}
 
           <div>
             <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
