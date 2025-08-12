@@ -7,8 +7,13 @@ import { ANIMATED_ICONS } from "@/lib/constants";
 
 export default function PropertiesPanel() {
   const {
-    selectedNode, setSelectedNode, updateNodeData, updateNodeStyle,
-    selectedEdge, setSelectedEdge, updateEdgeData,
+    selectedNode,
+    setSelectedNode,
+    updateNodeData,
+    updateNodeStyle,
+    selectedEdge,
+    setSelectedEdge,
+    updateEdgeData,
     swapEdgeDirection,
     deleteElement,
     isDarkMode,
@@ -24,13 +29,12 @@ export default function PropertiesPanel() {
       updateNodeData(selectedNode.id, { requirements: value });
     }
   };
-  
+
   const mdeOptions = useMemo(() => ({
     spellChecker: false,
     status: false,
-    toolbar: [ "bold", "italic", "heading", "|", "unordered-list", "ordered-list", "|", "link", "image", "|", "preview" ] as any,
+    toolbar: ["bold", "italic", "heading", "|", "unordered-list", "ordered-list", "|", "link", "image", "|", "preview"] as any,
   }), []);
-
 
   if (!selectedNode && !selectedEdge) {
     return (
@@ -43,76 +47,161 @@ export default function PropertiesPanel() {
   if (selectedNode) {
     const defaultBgColor = isDarkMode ? '#374151' : '#ffffff';
     const defaultTextColor = isDarkMode ? '#f3f4f6' : '#1f2937';
-    const isTransparent = selectedNode.style?.backgroundColor === 'transparent';
+    const isShapeNode = selectedNode.type === 'shape';
+    const isTransparent = isShapeNode
+      ? selectedNode.data?.fillColor === 'transparent'
+      : selectedNode.style?.backgroundColor === 'transparent';
+    const opacity = isShapeNode ? selectedNode.data?.opacity ?? 1 : 1; // Default opacity to 1
 
     return (
       <div key={selectedNode.id} className="h-full bg-surface dark:bg-dark-surface p-3 overflow-y-auto flex flex-col">
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-base font-semibold text-text-main dark:text-dark-text-main">Node Properties</h2>
-          <button onClick={closePanel} className="text-text-muted dark:text-dark-text-muted hover:text-text-main dark:hover:text-dark-text-main"><X size={18} /></button>
+          <button
+            onClick={closePanel}
+            className="text-text-muted dark:text-dark-text-muted hover:text-text-main dark:hover:text-dark-text-main"
+          >
+            <X size={18} />
+          </button>
         </div>
         <div className="space-y-4 flex-grow">
           <div>
             <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Node Name</label>
             <input
               type="text"
-              defaultValue={selectedNode.data.name}
+              defaultValue={selectedNode.data?.name || ''}
               onBlur={(e) => updateNodeData(selectedNode.id, { name: e.target.value })}
               className="w-full bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
             />
           </div>
-          
+
           <div>
             <label className="flex items-center gap-1 text-xs font-medium text-text-muted dark:text-dark-text-muted mb-2">
-                <Palette size={12} />
-                Appearance
+              <Palette size={12} />
+              Appearance
             </label>
             <div className="flex items-start gap-4">
-                <div className="flex-1 space-y-1">
-                    <label htmlFor={`bg-color-${selectedNode.id}`} className="text-xs text-text-muted dark:text-dark-text-muted">Background</label>
-                    <input 
-                        type="color"
-                        id={`bg-color-${selectedNode.id}`}
-                        value={isTransparent ? '#ffffff' : selectedNode.style?.backgroundColor?.toString() || defaultBgColor}
-                        onChange={(e) => updateNodeStyle(selectedNode.id, { backgroundColor: e.target.value })}
-                        disabled={isTransparent}
-                        className="w-full h-8 p-0 border-none cursor-pointer bg-transparent disabled:opacity-20"
-                    />
-                </div>
-                <div className="flex-1 space-y-1">
-                    <label htmlFor={`text-color-${selectedNode.id}`} className="text-xs text-text-muted dark:text-dark-text-muted">Text / Stroke</label>
-                    <input 
-                        type="color"
-                        id={`text-color-${selectedNode.id}`}
-                        value={selectedNode.style?.color?.toString() || defaultTextColor}
-                        onChange={(e) => updateNodeStyle(selectedNode.id, { color: e.target.value })}
-                        className="w-full h-8 p-0 border-none cursor-pointer bg-transparent"
-                    />
-                </div>
-            </div>
-            <label htmlFor={`bg-transparent-${selectedNode.id}`} className="mt-2 flex items-center gap-1.5 cursor-pointer text-xs text-text-muted dark:text-dark-text-muted">
+              <div className="flex-1 space-y-1">
+                <label
+                  htmlFor={`bg-color-${selectedNode.id}`}
+                  className="text-xs text-text-muted dark:text-dark-text-muted"
+                >
+                  Background
+                </label>
                 <input
-                    type="checkbox"
-                    id={`bg-transparent-${selectedNode.id}`}
-                    checked={isTransparent}
-                    onChange={(e) => {
-                        const newBgColor = e.target.checked ? 'transparent' : defaultBgColor;
-                        updateNodeStyle(selectedNode.id, { backgroundColor: newBgColor });
-                    }}
-                    className="h-3.5 w-3.5 rounded-sm border-border dark:border-dark-border"
+                  type="color"
+                  id={`bg-color-${selectedNode.id}`}
+                  // When transparent, show the default background color but keep it disabled.
+                  // Otherwise, show the actual fill/background color.
+                  value={
+                    isTransparent
+                      ? defaultBgColor // Show default color when transparent
+                      : isShapeNode
+                      ? selectedNode.data?.fillColor || defaultBgColor
+                      : selectedNode.style?.backgroundColor || defaultBgColor
+                  }
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    if (isShapeNode) {
+                      updateNodeData(selectedNode.id, { fillColor: newValue });
+                    } else {
+                      updateNodeStyle(selectedNode.id, { backgroundColor: newValue });
+                    }
+                  }}
+                  disabled={isTransparent}
+                  className="w-full h-8 p-0 border-none cursor-pointer bg-transparent disabled:opacity-20"
                 />
-                Transparent Background
+              </div>
+              <div className="flex-1 space-y-1">
+                <label
+                  htmlFor={`text-color-${selectedNode.id}`}
+                  className="text-xs text-text-muted dark:text-dark-text-muted"
+                >
+                  Text / Stroke
+                </label>
+                <input
+                  type="color"
+                  id={`text-color-${selectedNode.id}`}
+                  value={
+                    isShapeNode
+                      ? selectedNode.data?.strokeColor || defaultTextColor
+                      : selectedNode.style?.color || defaultTextColor
+                  }
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    if (isShapeNode) {
+                      updateNodeData(selectedNode.id, { strokeColor: newValue });
+                    } else {
+                      updateNodeStyle(selectedNode.id, { color: newValue });
+                    }
+                  }}
+                  className="w-full h-8 p-0 border-none cursor-pointer bg-transparent"
+                />
+              </div>
+            </div>
+            <label
+              htmlFor={`bg-transparent-${selectedNode.id}`}
+              className="mt-2 flex items-center gap-1.5 cursor-pointer text-xs text-text-muted dark:text-dark-text-muted"
+            >
+              <input
+                type="checkbox"
+                id={`bg-transparent-${selectedNode.id}`}
+                checked={isTransparent}
+                onChange={(e) => {
+                  const newValue = e.target.checked ? 'transparent' : defaultBgColor;
+                  if (isShapeNode) {
+                    updateNodeData(selectedNode.id, { fillColor: newValue });
+                  } else {
+                    updateNodeStyle(selectedNode.id, { backgroundColor: newValue });
+                  }
+                }}
+                className="h-3.5 w-3.5 rounded-sm border-border dark:border-dark-border"
+              />
+              Transparent Background
             </label>
-          </div>          
+            {isShapeNode && (
+              <div className="mt-2">
+                <label
+                  htmlFor={`opacity-${selectedNode.id}`}
+                  className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1"
+                >
+                  Opacity
+                </label>
+                <input
+                  type="range"
+                  id={`opacity-${selectedNode.id}`}
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={opacity}
+                  // Added key to force re-render and update slider position
+                  key={`opacity-slider-${selectedNode.id}-${opacity}`}
+                  onChange={(e) => {
+                    const newValue = parseFloat(e.target.value);
+                    updateNodeData(selectedNode.id, { opacity: newValue });
+                  }}
+                  className="w-full h-8 cursor-pointer"
+                />
+                <span className="text-xs text-text-muted dark:text-dark-text-muted">{(opacity * 100).toFixed(0)}%</span>
+              </div>
+            )}
+          </div>
 
-          {selectedNode.data.techStack && selectedNode.data.category !== 'Annotations' &&(
+          {selectedNode.data?.techStack && selectedNode.data?.category !== 'Annotations' && (
             <div>
-              <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Technology</label>
-              <input type="text" value={selectedNode.data.techStack.join(', ')} readOnly className="w-full bg-background dark:bg-dark-background border-border dark:border-dark-border rounded-md px-2 py-1 text-sm text-text-muted dark:text-dark-text-muted" />
+              <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
+                Technology
+              </label>
+              <input
+                type="text"
+                value={selectedNode.data.techStack.join(', ')}
+                readOnly
+                className="w-full bg-background dark:bg-dark-background border-border dark:border-dark-border rounded-md px-2 py-1 text-sm text-text-muted dark:text-dark-text-muted"
+              />
             </div>
           )}
 
-          {selectedNode.data.requirements !== undefined && (
+          {selectedNode.data?.requirements !== undefined && (
             <div>
               <label className="flex items-center gap-1 text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
                 <AlignLeft size={12} />
@@ -126,26 +215,28 @@ export default function PropertiesPanel() {
               />
             </div>
           )}
-          
-          {selectedNode.data.type === 'text-note' && (
-             <div>
-                <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Note Content</label>
-                <textarea
-                  defaultValue={selectedNode.data.text}
-                  onBlur={(e) => updateNodeData(selectedNode.id, { text: e.target.value })}
-                  className="w-full h-40 bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
-                />
+
+          {selectedNode.data?.type === 'text-note' && (
+            <div>
+              <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
+                Note Content
+              </label>
+              <textarea
+                defaultValue={selectedNode.data.text}
+                onBlur={(e) => updateNodeData(selectedNode.id, { text: e.target.value })}
+                className="w-full h-40 bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
+              />
             </div>
           )}
         </div>
         <div className="mt-4">
-            <button
-                onClick={() => deleteElement(selectedNode.id, true)}
-                className="w-full flex items-center justify-center gap-1 px-2 py-1 text-sm bg-red-500/10 text-red-400 border border-red-500/20 rounded-md hover:bg-red-500/20 transition-colors"
-            >
-                <Trash2 size={16} />
-                Delete Node
-            </button>
+          <button
+            onClick={() => deleteElement(selectedNode.id, true)}
+            className="w-full flex items-center justify-center gap-1 px-2 py-1 text-sm bg-red-500/10 text-red-400 border border-red-500/20 rounded-md hover:bg-red-500/20 transition-colors"
+          >
+            <Trash2 size={16} />
+            Delete Node
+          </button>
         </div>
       </div>
     );
@@ -161,31 +252,40 @@ export default function PropertiesPanel() {
     };
 
     const handleReverseDirection = () => {
-      if(selectedEdge?.id) {
+      if (selectedEdge?.id) {
         swapEdgeDirection(selectedEdge.id);
       }
     };
-    
+
     const handleAnimatedIconChange = (evt: React.ChangeEvent<HTMLSelectElement>) => {
-        const iconKey = evt.target.value;
-        updateEdgeData(selectedEdge.id, {
-            data: { animatedIcon: iconKey === 'none' ? null : iconKey }
-        });
+      const iconKey = evt.target.value;
+      updateEdgeData(selectedEdge.id, {
+        data: { animatedIcon: iconKey === 'none' ? null : iconKey },
+      });
     };
 
     const handleIconColorChange = (evt: React.ChangeEvent<HTMLInputElement>) => {
-        updateEdgeData(selectedEdge.id, { data: { animatedIconColor: evt.target.value } });
+      updateEdgeData(selectedEdge.id, { data: { animatedIconColor: evt.target.value } });
     };
 
     return (
       <div key={selectedEdge.id} className="h-full bg-surface dark:bg-dark-surface p-3 overflow-y-auto flex flex-col">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-base font-semibold text-text-main dark:text-dark-text-main flex items-center gap-1"><EdgeIcon size={16} /> Edge Properties</h2>
-          <button onClick={closePanel} className="text-text-muted dark:text-dark-text-muted hover:text-text-main dark:hover:text-dark-text-main"><X size={18} /></button>
+          <h2 className="text-base font-semibold text-text-main dark:text-dark-text-main flex items-center gap-1">
+            <EdgeIcon size={16} /> Edge Properties
+          </h2>
+          <button
+            onClick={closePanel}
+            className="text-text-muted dark:text-dark-text-muted hover:text-text-main dark:hover:text-dark-text-main"
+          >
+            <X size={18} />
+          </button>
         </div>
         <div className="space-y-3 flex-grow">
           <div>
-            <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Connection Type</label>
+            <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
+              Connection Type
+            </label>
             <select
               value={typeof selectedEdge.label === 'string' ? selectedEdge.label : 'REST'}
               onChange={handleEdgeTypeChange}
@@ -199,7 +299,9 @@ export default function PropertiesPanel() {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Path Style</label>
+            <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
+              Path Style
+            </label>
             <select
               value={selectedEdge.data?.pathType || 'smoothstep'}
               onChange={handlePathTypeChange}
@@ -210,34 +312,42 @@ export default function PropertiesPanel() {
               <option value="straight">Straight</option>
             </select>
           </div>
-          
+
           <div>
-            <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Animated Icon</label>
+            <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
+              Animated Icon
+            </label>
             <select
               value={selectedEdge.data?.animatedIcon || 'none'}
               onChange={handleAnimatedIconChange}
               className="w-full bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
             >
-              {ANIMATED_ICONS.map(icon => (
-                <option key={icon.key} value={icon.key}>{icon.label}</option>
+              {ANIMATED_ICONS.map((icon) => (
+                <option key={icon.key} value={icon.key}>
+                  {icon.label}
+                </option>
               ))}
             </select>
           </div>
 
           {selectedEdge.data?.animatedIcon && (
             <div>
-                <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Icon Color</label>
-                <input 
-                    type="color"
-                    value={selectedEdge.data.animatedIconColor || '#818cf8'}
-                    onChange={handleIconColorChange}
-                    className="w-full h-8 p-0 border-none cursor-pointer bg-transparent"
-                />
+              <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
+                Icon Color
+              </label>
+              <input
+                type="color"
+                value={selectedEdge.data.animatedIconColor || '#818cf8'}
+                onChange={handleIconColorChange}
+                className="w-full h-8 p-0 border-none cursor-pointer bg-transparent"
+              />
             </div>
           )}
-          
+
           <div>
-            <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">Actions</label>
+            <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
+              Actions
+            </label>
             <button
               onClick={handleReverseDirection}
               className="w-full flex items-center justify-center gap-1 px-2 py-1 text-sm bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md hover:bg-border dark:hover:bg-dark-border transition-colors"
@@ -248,13 +358,13 @@ export default function PropertiesPanel() {
           </div>
         </div>
         <div className="mt-4">
-            <button
-                onClick={() => deleteElement(selectedEdge.id, false)}
-                className="w-full flex items-center justify-center gap-1 px-2 py-1 text-sm bg-red-500/10 text-red-400 border border-red-500/20 rounded-md hover:bg-red-500/20 transition-colors"
-            >
-                <Trash2 size={16} />
-                Delete Edge
-            </button>
+          <button
+            onClick={() => deleteElement(selectedEdge.id, false)}
+            className="w-full flex items-center justify-center gap-1 px-2 py-1 text-sm bg-red-500/10 text-red-400 border border-red-500/20 rounded-md hover:bg-red-500/20 transition-colors"
+          >
+            <Trash2 size={16} />
+            Delete Edge
+          </button>
         </div>
       </div>
     );

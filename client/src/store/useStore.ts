@@ -154,15 +154,15 @@ export const useStore = create<AppState>((set, get) => ({
         return;
     }
     const newEdge: Edge = {
-        id: uuidv4(),
-        source: connection.source,
-        target: connection.target,
-        sourceHandle: connection.sourceHandle,
-        targetHandle: connection.targetHandle,
-        type: 'custom',
-        label: "REST",
-        markerEnd: { type: MarkerType.ArrowClosed },
-        data: { pathType: 'smoothstep', isAnimated: false, animatedIcon: null, animatedIconColor: '#818cf8' }
+      id: uuidv4(),
+      source: connection.source,
+      target: connection.target,
+      sourceHandle: connection.sourceHandle,
+      targetHandle: connection.targetHandle,
+      type: 'custom',
+      label: "REST",
+      markerEnd: { type: MarkerType.ArrowClosed },
+      data: { pathType: 'smoothstep', isAnimated: false, animatedIcon: null, animatedIconColor: '#818cf8' }
     };
     set(state => {
         if (state.currentFlowId === null) {
@@ -182,51 +182,121 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   updateNodeData: (nodeId, data) => {
-    const updater = (n: Node<NodeData>) => n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n;
-    set(state => ({
-        nodes: state.nodes.map(n => {
-            if (state.currentFlowId && n.id === state.currentFlowId) {
-                const subflow = n.data.subflow || { nodes: [], edges: [] };
-                return { ...n, data: { ...n.data, subflow: { ...subflow, nodes: subflow.nodes.map(updater) } } };
+    set(state => {
+      let updatedNodes: Node<NodeData>[];
+      let updatedSelectedNode: Node<NodeData> | null = state.selectedNode;
+
+      if (state.currentFlowId) {
+        // Logic for updating nodes within a subflow
+        updatedNodes = state.nodes.map(n => {
+          if (n.id === state.currentFlowId) {
+            const subflow = n.data.subflow || { nodes: [], edges: [] };
+            const newSubflowNodes = subflow.nodes.map(subNode =>
+              subNode.id === nodeId ? { ...subNode, data: { ...subNode.data, ...data } } : subNode
+            );
+            // If the updated node is the currently selected one, update the selectedNode reference
+            if (state.selectedNode && state.selectedNode.id === nodeId) {
+              updatedSelectedNode = newSubflowNodes.find(sn => sn.id === nodeId) || updatedSelectedNode;
             }
-            return updater(n);
-        })
-    }));
+            return { ...n, data: { ...n.data, subflow: { ...subflow, nodes: newSubflowNodes } } };
+          }
+          return n;
+        });
+      } else {
+        // Logic for updating top-level nodes
+        updatedNodes = state.nodes.map(n =>
+          n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n
+        );
+        // If the updated node is the currently selected one, update the selectedNode reference
+        if (state.selectedNode && state.selectedNode.id === nodeId) {
+          updatedSelectedNode = updatedNodes.find(n => n.id === nodeId) || updatedSelectedNode;
+        }
+      }
+
+      return {
+        nodes: updatedNodes,
+        selectedNode: updatedSelectedNode, // Ensure selectedNode is the latest version
+      };
+    });
     get().updateProjectSnapshot();
   },
 
   updateNodeDimensions: (nodeId, dimensions) => {
-    const updater = (n: Node<NodeData>) => n.id === nodeId ? { ...n, style: { ...n.style, ...dimensions } } : n;
-    set(state => ({
-        nodes: state.nodes.map(n => {
-            if (state.currentFlowId && n.id === state.currentFlowId) {
-                const subflow = n.data.subflow || { nodes: [], edges: [] };
-                return { ...n, data: { ...n.data, subflow: { ...subflow, nodes: subflow.nodes.map(updater) } } };
+    set(state => {
+      let updatedNodes: Node<NodeData>[];
+      let updatedSelectedNode: Node<NodeData> | null = state.selectedNode; // Keep track for update
+
+      if (state.currentFlowId) {
+        updatedNodes = state.nodes.map(n => {
+          if (n.id === state.currentFlowId) {
+            const subflow = n.data.subflow || { nodes: [], edges: [] };
+            const newSubflowNodes = subflow.nodes.map(subNode =>
+              subNode.id === nodeId ? { ...subNode, style: { ...subNode.style, ...dimensions } } : subNode
+            );
+            // If the updated node is the currently selected one, update the selectedNode reference
+            if (state.selectedNode && state.selectedNode.id === nodeId) {
+              updatedSelectedNode = newSubflowNodes.find(sn => sn.id === nodeId) || updatedSelectedNode;
             }
-            return updater(n);
-        })
-    }));
+            return { ...n, data: { ...n.data, subflow: { ...subflow, nodes: newSubflowNodes } } };
+          }
+          return n;
+        });
+      } else {
+        updatedNodes = state.nodes.map(n =>
+          n.id === nodeId ? { ...n, style: { ...n.style, ...dimensions } } : n
+        );
+        // If the updated node is the currently selected one, update the selectedNode reference
+        if (state.selectedNode && state.selectedNode.id === nodeId) {
+          updatedSelectedNode = updatedNodes.find(n => n.id === nodeId) || updatedSelectedNode;
+        }
+      }
+
+      return {
+        nodes: updatedNodes,
+        selectedNode: updatedSelectedNode, // Ensure selectedNode is the latest version
+      };
+    });
     get().updateProjectSnapshot();
   },
 
   updateNodeStyle: (nodeId, style) => {
-    const updater = (n: Node<NodeData>) => n.id === nodeId ? { ...n, style: { ...n.style, ...style } } : n;
     set(state => {
-        const newNodes = state.nodes.map(n => {
-            if (state.currentFlowId && n.id === state.currentFlowId) {
-                const subflow = n.data.subflow || { nodes: [], edges: [] };
-                return { ...n, data: { ...n.data, subflow: { ...subflow, nodes: subflow.nodes.map(updater) } } };
+      let updatedNodes: Node<NodeData>[];
+      let updatedSelectedNode: Node<NodeData> | null = state.selectedNode; // Keep track for update
+
+      if (state.currentFlowId) {
+        updatedNodes = state.nodes.map(n => {
+          if (n.id === state.currentFlowId) {
+            const subflow = n.data.subflow || { nodes: [], edges: [] };
+            const newSubflowNodes = subflow.nodes.map(subNode =>
+              subNode.id === nodeId ? { ...subNode, style: { ...subNode.style, ...style } } : subNode
+            );
+            // If the updated node is the currently selected one, update the selectedNode reference
+            if (state.selectedNode && state.selectedNode.id === nodeId) {
+              updatedSelectedNode = newSubflowNodes.find(sn => sn.id === nodeId) || updatedSelectedNode;
             }
-            return updater(n);
+            return { ...n, data: { ...n.data, subflow: { ...subflow, nodes: newSubflowNodes } } };
+          }
+          return n;
         });
-        return {
-            nodes: newNodes,
-            selectedNode: state.selectedNode ? updater(state.selectedNode) : null,
+      } else {
+        updatedNodes = state.nodes.map(n =>
+          n.id === nodeId ? { ...n, style: { ...n.style, ...style } } : n
+        );
+        // If the updated node is the currently selected one, update the selectedNode reference
+        if (state.selectedNode && state.selectedNode.id === nodeId) {
+          updatedSelectedNode = updatedNodes.find(n => n.id === nodeId) || updatedSelectedNode;
         }
+      }
+
+      return {
+        nodes: updatedNodes,
+        selectedNode: updatedSelectedNode, // Ensure selectedNode is the latest version
+      };
     });
     get().updateProjectSnapshot();
   },
-  
+
   updateEdgeData: (edgeId, payload) => {
     const updater = (e: Edge) => {
       if (e.id === edgeId) {
@@ -241,20 +311,20 @@ export const useStore = create<AppState>((set, get) => ({
       }
       return e;
     };
-  
+
     set(state => {
-      const allEdges = state.currentFlowId === null 
+      const allEdges = state.currentFlowId === null
         ? state.edges
         : state.nodes.find(n => n.id === state.currentFlowId)?.data.subflow?.edges || [];
       const updatedAllEdges = allEdges.map(updater);
-      
+
       if (state.currentFlowId === null) {
           return {
               edges: updatedAllEdges,
               selectedEdge: updatedAllEdges.find(e => e.id === edgeId) || state.selectedEdge
           }
       }
-      
+
       return {
           nodes: state.nodes.map(n => {
             if (n.id === state.currentFlowId) {
@@ -293,12 +363,12 @@ export const useStore = create<AppState>((set, get) => ({
     });
     get().updateProjectSnapshot();
   },
-  
+
   deleteElement: (elementId: string, isNode: boolean) => {
     set(state => {
         if (state.currentFlowId === null) {
             const newNodes = isNode ? state.nodes.filter(n => n.id !== elementId) : state.nodes;
-            const newEdges = isNode 
+            const newEdges = isNode
                 ? state.edges.filter(e => e.source !== elementId && e.target !== elementId)
                 : state.edges.filter(e => e.id !== elementId);
             return { nodes: newNodes, edges: newEdges, selectedNode: null, selectedEdge: null };
