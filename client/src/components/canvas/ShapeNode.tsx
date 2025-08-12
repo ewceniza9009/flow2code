@@ -1,47 +1,48 @@
 import { NodeProps } from 'reactflow';
 import { NodeResizer } from '@reactflow/node-resizer';
 import { useStore, NodeData } from '@/store/useStore';
+import React from 'react';
 
-const renderShape = (shapeType: string) => {
+type CustomNodeProps = NodeProps<NodeData> & {
+    style?: React.CSSProperties;
+};
+
+const renderShape = (shapeType: string, style?: React.CSSProperties) => {
+    const fill = style?.backgroundColor || 'rgba(13, 148, 136, 0.2)';
+    const stroke = style?.color || 'rgb(13, 148, 136)';
+
     switch (shapeType) {
         case 'Rectangle':
-            return <rect width="100%" height="100%" className="fill-primary/20 stroke-primary stroke-2" />;
+            return <rect x="0" y="0" width="100%" height="100%" rx="8" fill={fill} stroke={stroke} strokeWidth="4px" />;
         case 'Circle':
-            return <ellipse cx="50%" cy="50%" rx="50%" ry="50%" className="fill-primary/20 stroke-primary stroke-2" />;
+            return <circle cx="50" cy="50" r="48" fill={fill} stroke={stroke} strokeWidth="4" />;
         case 'Diamond':
-            return <polygon points="50,0 100,50 50,100 0,50" className="fill-primary/20 stroke-primary stroke-2" preserveAspectRatio="none" vectorEffect="non-scaling-stroke"/>;
+            return <polygon points="50,2 98,50 50,98 2,50" fill={fill} stroke={stroke} strokeWidth="4" vectorEffect="non-scaling-stroke"/>;
         case 'Cylinder':
             return (
-                <g className="fill-primary/20 stroke-primary stroke-2" vectorEffect="non-scaling-stroke">
-                    <ellipse cx="50" cy="15" rx="48" ry="14" />
-                    <rect x="2" y="15" width="96" height="70" />
-                    <ellipse cx="50" cy="85" rx="48" ry="14" />
+                <g fill={fill} stroke={stroke} strokeWidth="2" vectorEffect="non-scaling-stroke">
+                    <ellipse cx="100" cy="25" rx="98" ry="24" />
+                    <rect x="2" y="25" width="196" height="150" />
+                    <ellipse cx="100" cy="175" rx="98" ry="24" />
                 </g>
             );
         case 'ArrowRight':
-             return (
-                <g className="fill-primary stroke-primary" vectorEffect="non-scaling-stroke">
-                    <path d="M0,20 L75,20 L75,10 L100,25 L75,40 L75,30 L0,30 Z" />
-                </g>
-            );
+             return <path d="M0 25 L75 25 L75 0 L100 50 L75 100 L75 75 L0 75 Z" fill={stroke} stroke={stroke} strokeLinejoin="round" />;
         case 'ArrowLeft':
-             return (
-                <g className="fill-primary stroke-primary" vectorEffect="non-scaling-stroke">
-                    <path d="M100,20 L25,20 L25,10 L0,25 L25,40 L25,30 L100,30 Z" />
-                </g>
-            );
+             return <path d="M100 25 L25 25 L25 0 L0 50 L25 100 L25 75 L100 75 Z" fill={stroke} stroke={stroke} strokeLinejoin="round" />;
         default:
-            return <rect width="100%" height="100%" className="fill-red-500/20 stroke-red-500 stroke-2" />;
+            return <rect width="100" height="100" fill="red" stroke="black" strokeWidth="2" />;
     }
 }
 
 
-const ShapeNode = ({ id, data, selected }: NodeProps<NodeData>) => {
+const ShapeNode = ({ id, data, selected, style }: CustomNodeProps) => {
   const { updateNodeDimensions } = useStore();
+  
   const keepAspectRatio = data.shapeType === 'Circle' || data.shapeType === 'Diamond';
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full bg-transparent">
       <NodeResizer
         isVisible={selected}
         minWidth={50}
@@ -51,8 +52,14 @@ const ShapeNode = ({ id, data, selected }: NodeProps<NodeData>) => {
           updateNodeDimensions(id, { width: params.width, height: params.height });
         }}
       />
-      <svg width="100%" height="100%" viewBox={data.shapeType === 'Cylinder' ? "0 0 100 100" : "0 0 100 50"} preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        {renderShape(data.shapeType)}
+      <svg 
+        width="100%" 
+        height="100%" 
+        viewBox="0 0 100 100" 
+        preserveAspectRatio={keepAspectRatio ? "xMidYMid meet" : "none"} 
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {renderShape(data.shapeType, style)}
       </svg>
     </div>
   );

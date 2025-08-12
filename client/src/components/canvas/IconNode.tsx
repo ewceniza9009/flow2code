@@ -3,6 +3,11 @@ import { NodeResizer } from '@reactflow/node-resizer';
 import { useStore, NodeData } from '@/store/useStore';
 import { Cpu, Server, Database, Users, Cloud, File, HelpCircle, LucideProps } from 'lucide-react';
 import { ForwardRefExoticComponent, RefAttributes } from 'react';
+import React from 'react';
+
+type CustomNodeProps = NodeProps<NodeData> & {
+  style?: React.CSSProperties;
+};
 
 const ICONS: { [key: string]: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> } = {
   Cpu,
@@ -13,7 +18,7 @@ const ICONS: { [key: string]: ForwardRefExoticComponent<Omit<LucideProps, "ref">
   File,
 };
 
-const IconNode = ({ id, data, selected }: NodeProps<NodeData>) => {
+const IconNode = ({ id, data, selected, style }: CustomNodeProps) => {
   const { updateNodeDimensions } = useStore();
   
   const IconComponent = ICONS[data.iconName] || HelpCircle;
@@ -29,7 +34,11 @@ const IconNode = ({ id, data, selected }: NodeProps<NodeData>) => {
           updateNodeDimensions(id, { width: params.width, height: params.height });
         }}
       />
-      <IconComponent className="text-primary w-full h-full" strokeWidth={1.5} />
+      <IconComponent 
+        className="w-full h-full" 
+        strokeWidth={1.5}
+        color={style?.color?.toString()} 
+      />
     </div>
   );
 };

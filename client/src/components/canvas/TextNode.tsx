@@ -18,7 +18,7 @@ const TextNode = ({ id, data, selected }: NodeProps<NodeData>) => {
       <textarea
         defaultValue={data.text || 'Enter text...'}
         onBlur={(e) => updateNodeData(id, { text: e.target.value })}
-        className="w-full h-full p-2 bg-transparent text-text-main dark:text-dark-text-main resize-none focus:outline-none placeholder:text-text-muted"
+        className="w-full h-full p-2 bg-transparent resize-none focus:outline-none placeholder:text-text-muted"
         placeholder="Your note here..."
       />
     </div>
