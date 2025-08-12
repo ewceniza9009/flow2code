@@ -17,6 +17,9 @@ export const NODE_DEFINITIONS: NodeCategory[] = [
   {
     name: "Frontend",
     nodes: [
+      { type: 'frontend-vanilla', name: 'Vanilla', category: 'Frontend', techStack: ['HTML', 'Javascript', 'CSS(Tailwind CSS + Bootstrap)'] },
+      { type: 'frontend-aspcore', name: 'Razor', category: 'Frontend', techStack: ['Razor + HTML', 'Javascript', 'CSS(Tailwind CSS + Bootstrap)'] },
+      { type: 'frontend-thirdparty', name: 'ThirdParty', category: 'Frontend', techStack: ['Telerik', 'Devexpress', 'Syncfusion)'] },
       { type: 'frontend-react', name: 'React', category: 'Frontend', techStack: ['React', 'Vite', 'TypeScript'] },
       { type: 'frontend-nextjs', name: 'Next.js', category: 'Frontend', techStack: ['Next.js', 'React'] },
       { type: 'frontend-vue', name: 'Vue.js', category: 'Frontend', techStack: ['Vue', 'Vite'] },
@@ -43,6 +46,7 @@ export const NODE_DEFINITIONS: NodeCategory[] = [
       { type: 'db-mysql', name: 'MySQL', category: 'Data Layer', techStack: ['SQL', 'MySQL'] },
       { type: 'db-mongo', name: 'MongoDB', category: 'Data Layer', techStack: ['NoSQL', 'MongoDB'] },
       { type: 'db-redis', name: 'Redis', category: 'Data Layer', techStack: ['Cache', 'Redis'] },
+      { type: 'db-indexdb', name: 'IndexDB', category: 'Data Layer', techStack: ['DexieJS', 'IndexDb'] },
     ],
   },
   {

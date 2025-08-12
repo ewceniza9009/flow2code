@@ -96,9 +96,19 @@ export default function FlowCanvas() {
         initialStyle = { width: 80, height: 80 };
       }
       
+      // Determine the correct type for React Flow. All technology nodes should use the 'custom' type.
+      let nodeTypeForReactFlow: string;
+      if (isGroup) {
+        nodeTypeForReactFlow = 'group';
+      } else if (isAnnotation) {
+        nodeTypeForReactFlow = nodeDefinition.type; // e.g., 'shape', 'icon', 'text-note'
+      } else {
+        nodeTypeForReactFlow = 'custom'; // All other nodes (Frontend, Backend, etc.) use the 'custom' renderer.
+      }      
+      
       const newNode: Node<NodeData> = {
         id: uuidv4(),
-        type: nodeDefinition.type,
+        type: nodeTypeForReactFlow, //Corrected node type
         position,
         data: initialData,
         style: initialStyle,
