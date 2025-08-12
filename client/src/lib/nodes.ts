@@ -29,7 +29,7 @@ export const NODE_DEFINITIONS: NodeCategory[] = [
   {
     name: "Backend",
     nodes: [
-      { type: 'backend-express', name: 'Express API', category: 'Backend', techStack: ['Node.js', 'Express', 'TypeScript'] },
+      { type: 'backend-express', name: 'Express API', category: 'Backend', techStack: ['Node.js', 'Express', 'TypeScript'], config: { port: 3000, middleware: ['cors', 'json'] } },
       { type: 'backend-nestjs', name: 'NestJS API', category: 'Backend', techStack: ['NestJS', 'TypeScript'] },
       { type: 'backend-fastapi', name: 'FastAPI', category: 'Backend', techStack: ['Python', 'FastAPI'] },
       { type: 'backend-django', name: 'Django', category: 'Backend', techStack: ['Python', 'Django'] },
@@ -41,7 +41,7 @@ export const NODE_DEFINITIONS: NodeCategory[] = [
   {
     name: "Data Layer",
     nodes: [
-      { type: 'db-postgres', name: 'PostgreSQL', category: 'Data Layer', techStack: ['SQL', 'PostgreSQL'] },
+      { type: 'db-postgres', name: 'PostgreSQL', category: 'Data Layer', techStack: ['SQL', 'PostgreSQL'], config: { databaseName: 'db', username: 'user', password: 'password' } },
       { type: 'db-sqlserver', name: 'SQL Server', category: 'Data Layer', techStack: ['SQL', 'MS SQL'] },
       { type: 'db-mysql', name: 'MySQL', category: 'Data Layer', techStack: ['SQL', 'MySQL'] },
       { type: 'db-mongo', name: 'MongoDB', category: 'Data Layer', techStack: ['NoSQL', 'MongoDB'] },

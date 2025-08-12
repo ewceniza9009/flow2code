@@ -16,6 +16,14 @@ export type NodeData = {
   [key: string]: any;
 };
 
+export interface AISuggestion {
+  id: string;
+  type: 'architectural' | 'node' | 'edge';
+  title: string;
+  description: string;
+  actions: { label: string; action: 'add' | 'remove' | 'update'; payload: any; }[];
+}
+
 interface ContextMenuState { id: string; top: number; left: number; }
 
 interface AppState {
@@ -32,6 +40,8 @@ interface AppState {
   isDarkMode: boolean;
   isNodeLibraryOpen: boolean;
   isPropertiesPanelOpen: boolean;
+  isSuggestionsPanelOpen: boolean;
+  suggestions: AISuggestion[];
   loadProjects: () => Promise<void>;
   setActiveProject: (project: Project | null) => void;
   setNodes: (nodes: Node<NodeData>[]) => void;
@@ -44,7 +54,7 @@ interface AppState {
   updateNodeData: (nodeId: string, data: any) => void;
   updateNodeDimensions: (nodeId: string, dimensions: { width: number, height: number }) => void;
   updateNodeStyle: (nodeId: string, style: React.CSSProperties) => void;
-  updateEdgeData: (edgeId: string, payload: { label?: string; data?: any; style?: React.CSSProperties }) => void; // Added style to payload
+  updateEdgeData: (edgeId: string, payload: { label?: string; data?: any; style?: React.CSSProperties }) => void;
   swapEdgeDirection: (edgeId: string) => void;
   deleteElement: (elementId: string, isNode: boolean) => void;
   enterSubflow: (nodeId: string) => void;
@@ -57,9 +67,12 @@ interface AppState {
   closeNewProjectModal: () => void;
   setIsGenerating: (isGenerating: boolean) => void;
   updateProjectSnapshot: () => void;
+  renameProject: (projectId: string, newName: string) => Promise<void>;
   toggleDarkMode: () => void;
   setIsNodeLibraryOpen: (isOpen: boolean) => void;
   setIsPropertiesPanelOpen: (isOpen: boolean) => void;
+  setIsSuggestionsPanelOpen: (isOpen: boolean) => void;
+  setSuggestions: (suggestions: AISuggestion[]) => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -70,6 +83,8 @@ export const useStore = create<AppState>((set, get) => ({
   isDarkMode: true,
   isNodeLibraryOpen: false,
   isPropertiesPanelOpen: false,
+  isSuggestionsPanelOpen: false,
+  suggestions: [],
 
   loadProjects: async () => {
     const projectsFromDb = await db.projects.toArray();
@@ -460,18 +475,43 @@ export const useStore = create<AppState>((set, get) => ({
   closeNewProjectModal: () => set({ isNewProjectModalOpen: false }),
   setIsGenerating: (isGenerating) => set({ isGenerating }),
 
-  updateProjectSnapshot: debounce(() => {
+  updateProjectSnapshot: debounce(async () => {
     const { activeProject, nodes, edges } = get();
     if (!activeProject) return;
+
+    // Fetch the latest project data directly from the database to avoid stale state issues.
+    const projectInDb = await db.projects.get(activeProject.id);
+    if (!projectInDb) return;
+
     const newSnapshot: ProjectSnapshot = { timestamp: new Date(), nodes, edges };
-    db.projects.update(activeProject.id, {
-      snapshots: [...activeProject.snapshots, newSnapshot]
+    
+    const updatedSnapshots = [...projectInDb.snapshots, newSnapshot].slice(-5);
+    
+    await db.projects.update(activeProject.id, {
+      snapshots: updatedSnapshots
     });
   }, 1000),
+
+  renameProject: async (projectId, newName) => {
+    const { projects, activeProject } = get();
+    if (!activeProject || activeProject.id !== projectId) return;
+
+    await db.projects.update(projectId, { name: newName });
+    
+    const updatedProjects = projects.map(p =>
+      p.id === projectId ? { ...p, name: newName } : p
+    );
+    set({
+      projects: updatedProjects,
+      activeProject: { ...activeProject, name: newName }
+    });
+  },
 
   toggleDarkMode: () => {
     set(state => ({ isDarkMode: !state.isDarkMode }));
   },
   setIsNodeLibraryOpen: (isOpen) => set({ isNodeLibraryOpen: isOpen }),
   setIsPropertiesPanelOpen: (isOpen) => set({ isPropertiesPanelOpen: isOpen }),
+  setIsSuggestionsPanelOpen: (isOpen) => set({ isSuggestionsPanelOpen: isOpen }),
+  setSuggestions: (suggestions) => set({ suggestions }),
 }));
