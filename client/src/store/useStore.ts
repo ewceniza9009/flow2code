@@ -267,56 +267,37 @@ export const useStore = create<AppState>((set, get) => ({
 
   swapEdgeDirection: (edgeId: string) => {
     const { currentFlowId, nodes, edges } = get();
+
+    const swapLogic = (edge: Edge): Edge => {
+      if (edge.id !== edgeId) return edge;
+      
+      const newSourceHandle = edge.targetHandle?.replace('target', 'source');
+      const newTargetHandle = edge.sourceHandle?.replace('source', 'target');
+      
+      return {
+        ...edge,
+        source: edge.target,
+        target: edge.source,
+        sourceHandle: newSourceHandle,
+        targetHandle: newTargetHandle,
+      };
+    };
     
     if (currentFlowId === null) {
-      const edgeToSwap = edges.find(e => e.id === edgeId);
-      if (!edgeToSwap) return;
-
-      const updatedEdges = edges.map(e => {
-        if (e.id === edgeId) {
-          return {
-            ...e,
-            source: e.target,
-            target: e.source,
-            sourceHandle: e.targetHandle,
-            targetHandle: e.sourceHandle,
-          };
-        }
-        return e;
-      });
-      
+      const updatedEdges = edges.map(swapLogic);
       const newSelectedEdge = updatedEdges.find(e => e.id === edgeId);
       set({ edges: updatedEdges, selectedEdge: newSelectedEdge || null });
     } else {
-      const parentNode = nodes.find(n => n.id === currentFlowId);
-      if (!parentNode || !parentNode.data.subflow) return;
-      
-      const subflowEdges = parentNode.data.subflow.edges;
-      const updatedSubflowEdges = subflowEdges.map(e => {
-        if (e.id === edgeId) {
-          return {
-            ...e,
-            source: e.target,
-            target: e.source,
-            sourceHandle: e.targetHandle,
-            targetHandle: e.sourceHandle,
-          };
+      const newNodes = nodes.map(n => {
+        if (n.id === currentFlowId) {
+          const subflow = n.data.subflow || { nodes: [], edges: [] };
+          const updatedSubflowEdges = subflow.edges.map(swapLogic);
+          return { ...n, data: { ...n.data, subflow: { ...subflow, edges: updatedSubflowEdges } } };
         }
-        return e;
+        return n;
       });
-
-      const newNodes = nodes.map(n => n.id === currentFlowId ? {
-        ...n,
-        data: {
-          ...n.data,
-          subflow: {
-            ...n.data.subflow!,
-            edges: updatedSubflowEdges,
-          }
-        }
-      } : n);
-      
-      const newSelectedEdge = updatedSubflowEdges.find(e => e.id === edgeId);
+      const parentNode = newNodes.find(n => n.id === currentFlowId);
+      const newSelectedEdge = parentNode?.data.subflow?.edges.find(e => e.id === edgeId);
       set({ nodes: newNodes, selectedEdge: newSelectedEdge || null });
     }
 
