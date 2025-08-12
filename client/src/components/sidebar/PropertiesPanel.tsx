@@ -91,11 +91,9 @@ export default function PropertiesPanel() {
                 <input
                   type="color"
                   id={`bg-color-${selectedNode.id}`}
-                  // When transparent, show the default background color but keep it disabled.
-                  // Otherwise, show the actual fill/background color.
                   value={
                     isTransparent
-                      ? defaultBgColor // Show default color when transparent
+                      ? defaultBgColor
                       : isShapeNode
                       ? selectedNode.data?.fillColor || defaultBgColor
                       : selectedNode.style?.backgroundColor || defaultBgColor
@@ -174,7 +172,6 @@ export default function PropertiesPanel() {
                   max="1"
                   step="0.1"
                   value={opacity}
-                  // Added key to force re-render and update slider position
                   key={`opacity-slider-${selectedNode.id}-${opacity}`}
                   onChange={(e) => {
                     const newValue = parseFloat(e.target.value);
@@ -268,6 +265,25 @@ export default function PropertiesPanel() {
       updateEdgeData(selectedEdge.id, { data: { animatedIconColor: evt.target.value } });
     };
 
+    const handleDashedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (selectedEdge) {
+        const isChecked = e.target.checked;
+        updateEdgeData(selectedEdge.id, {
+          style: { strokeDasharray: isChecked ? '5, 5' : undefined },
+          data: { isAnimated: !isChecked && (selectedEdge.label === 'WebSocket' || selectedEdge.label === 'Stream') }
+        });
+      }
+    };
+
+    // New handler for edge color
+    const handleEdgeColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (selectedEdge) {
+        updateEdgeData(selectedEdge.id, {
+          style: { stroke: e.target.value }
+        });
+      }
+    };
+
     return (
       <div key={selectedEdge.id} className="h-full bg-surface dark:bg-dark-surface p-3 overflow-y-auto flex flex-col">
         <div className="flex justify-between items-center mb-3">
@@ -343,6 +359,41 @@ export default function PropertiesPanel() {
               />
             </div>
           )}
+          
+          {/* New Dashed Line Checkbox */}
+          <div className="mt-2">
+            <label
+              htmlFor={`dashed-line-${selectedEdge.id}`}
+              className="flex items-center gap-1.5 cursor-pointer text-xs text-text-muted dark:text-dark-text-muted"
+            >
+              <input
+                type="checkbox"
+                id={`dashed-line-${selectedEdge.id}`}
+                checked={!!selectedEdge.style?.strokeDasharray} // Check if strokeDasharray exists
+                onChange={handleDashedChange}
+                className="h-3.5 w-3.5 rounded-sm border-border dark:border-dark-border"
+              />
+              Dashed Line
+            </label>
+          </div>
+
+          {/* New Edge Color Picker */}
+          <div className="mt-2">
+            <label
+              htmlFor={`edge-color-${selectedEdge.id}`}
+              className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1"
+            >
+              Edge Color
+            </label>
+            <input
+              type="color"
+              id={`edge-color-${selectedEdge.id}`}
+              value={selectedEdge.style?.stroke || (isDarkMode ? '#A78BFA' : '#6366F1')} // Default based on theme
+              onChange={handleEdgeColorChange}
+              className="w-full h-8 p-0 border-none cursor-pointer bg-transparent"
+            />
+          </div>
+
 
           <div>
             <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">

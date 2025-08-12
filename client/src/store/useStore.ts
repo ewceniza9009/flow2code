@@ -44,7 +44,7 @@ interface AppState {
   updateNodeData: (nodeId: string, data: any) => void;
   updateNodeDimensions: (nodeId: string, dimensions: { width: number, height: number }) => void;
   updateNodeStyle: (nodeId: string, style: React.CSSProperties) => void;
-  updateEdgeData: (edgeId: string, data: any) => void;
+  updateEdgeData: (edgeId: string, payload: { label?: string; data?: any; style?: React.CSSProperties }) => void; // Added style to payload
   swapEdgeDirection: (edgeId: string) => void;
   deleteElement: (elementId: string, isNode: boolean) => void;
   enterSubflow: (nodeId: string) => void;
@@ -298,25 +298,34 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   updateEdgeData: (edgeId, payload) => {
-    const updater = (e: Edge) => {
-      if (e.id === edgeId) {
-        let updatedEdge = { ...e, data: { ...e.data, ...payload.data } };
-        if (payload.label !== undefined) {
-          updatedEdge.label = payload.label;
-        }
-        const currentLabel = updatedEdge.label;
-        updatedEdge.data.isAnimated = currentLabel === 'WebSocket' || currentLabel === 'Stream';
-        updatedEdge.markerEnd = currentLabel === 'DB' ? { type: MarkerType.Arrow, width: 20, height: 20 } : { type: MarkerType.ArrowClosed };
-        return updatedEdge;
-      }
-      return e;
-    };
-
     set(state => {
       const allEdges = state.currentFlowId === null
         ? state.edges
         : state.nodes.find(n => n.id === state.currentFlowId)?.data.subflow?.edges || [];
-      const updatedAllEdges = allEdges.map(updater);
+      
+      const updatedAllEdges = allEdges.map(e => {
+        if (e.id === edgeId) {
+          let updatedEdge = {
+            ...e,
+            data: { ...e.data, ...payload.data },
+            style: { ...e.style, ...payload.style }, // Apply style updates
+          };
+
+          if (payload.label !== undefined) {
+            updatedEdge.label = payload.label;
+          }
+
+          // Determine animation based on label AND if it's explicitly dashed
+          const currentLabel = updatedEdge.label;
+          const isDashed = updatedEdge.style?.strokeDasharray !== undefined && updatedEdge.style.strokeDasharray !== 'none';
+          
+          updatedEdge.data.isAnimated = (currentLabel === 'WebSocket' || currentLabel === 'Stream') && !isDashed; // Only animate if not dashed
+
+          updatedEdge.markerEnd = currentLabel === 'DB' ? { type: MarkerType.Arrow, width: 20, height: 20 } : { type: MarkerType.ArrowClosed };
+          return updatedEdge;
+        }
+        return e;
+      });
 
       if (state.currentFlowId === null) {
           return {

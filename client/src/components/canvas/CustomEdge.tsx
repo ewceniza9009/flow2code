@@ -102,7 +102,7 @@ export default function CustomEdge({
           d={edgePath}
           fill="none"
           strokeDasharray="5 5"
-          stroke="#4f46e5" 
+          stroke="#0f766e" 
           strokeWidth={2}
           className="path-animation"
           markerEnd={markerEnd}
@@ -114,7 +114,7 @@ export default function CustomEdge({
           
             <AnimatedIcon 
                 iconType={data.animatedIcon} 
-                color={data.animatedIconColor || '#818cf8'} 
+                color={data.animatedIconColor || '#0f766e'} 
             />
         </g>
       )}
