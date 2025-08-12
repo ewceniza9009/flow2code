@@ -25,7 +25,7 @@ export default function AppLayout() {
         </ReactFlowProvider>
 
         {isNodeLibraryOpen && (
-          <div className="absolute top-0 left-0 h-full w-[250px] z-10 transition-transform">
+          <div className="absolute top-0 left-0 h-full w-[300px] z-10 transition-transform">
             <NodeLibrary />
           </div>
         )}

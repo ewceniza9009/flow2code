@@ -75,7 +75,6 @@ export const NODE_DEFINITIONS: NodeCategory[] = [
         { type: 'shape', name: 'Rectangle', category: 'Annotations', techStack: ['Shape'], data: { shapeType: 'Rectangle' } },
         { type: 'shape', name: 'Circle', category: 'Annotations', techStack: ['Shape'], data: { shapeType: 'Circle' } },
         { type: 'shape', name: 'Diamond', category: 'Annotations', techStack: ['Shape'], data: { shapeType: 'Diamond' } },
-        { type: 'shape', name: 'Cylinder', category: 'Annotations', techStack: ['Shape'], data: { shapeType: 'Cylinder' } },
         { type: 'shape', name: 'Arrow Right', category: 'Annotations', techStack: ['Shape'], data: { shapeType: 'ArrowRight' } },
         { type: 'shape', name: 'Arrow Left', category: 'Annotations', techStack: ['Shape'], data: { shapeType: 'ArrowLeft' } },
         { type: 'icon', name: 'CPU Icon', category: 'Annotations', techStack: ['Icon'], data: { iconName: 'Cpu' } },

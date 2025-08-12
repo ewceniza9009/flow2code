@@ -25,3 +25,42 @@
 .hide-scrollbar::-webkit-scrollbar {
   display: none; /* for Chrome, Safari, and Opera */
 }
+
+.dark * {
+  /* Light mode default: Teal thumb, light gray track */
+  scrollbar-width: thin;
+  scrollbar-color: #14b8a6 #e5e7eb;
+}
+
+* {
+  /* Dark mode override: Teal thumb, dark gray track */
+  scrollbar-color: #14b8a6 #374151;
+}
+
+/* Works on Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+  width: 12px;
+}
+
+*::-webkit-scrollbar-track {
+  /* Light mode default track color */
+  background: #e5e7eb; /* gray-200 */
+  border-radius: 10px;
+}
+
+.dark *::-webkit-scrollbar-track {
+  /* Dark mode override track color */
+  background: #374151; /* gray-700 */
+}
+
+*::-webkit-scrollbar-thumb {
+  /* Light mode default thumb with a border matching the light track */
+  background-color: #14b8a6; /* teal-500 */
+  border-radius: 10px;
+  border: 3px solid #e5e7eb; /* gray-200 */
+}
+
+.dark *::-webkit-scrollbar-thumb {
+  /* Dark mode override thumb with a border matching the dark track */
+  border-color: #374151; /* gray-700 */
+}

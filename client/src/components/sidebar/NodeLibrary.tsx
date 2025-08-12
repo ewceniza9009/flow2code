@@ -35,7 +35,7 @@ export default function NodeLibrary() {
       />
       <div className="flex-grow overflow-y-auto">
         {filteredNodes.map((category: NodeCategory) => (
-          <div key={category.name} className="mb-4">
+          <div key={category.name} className="mb-4 pr-5">
             <h3 className="text-primary font-bold text-sm mb-2">{category.name}</h3>
             <div className="grid grid-cols-2 gap-2">
               {category.nodes.map((node: NodeDefinition) => (

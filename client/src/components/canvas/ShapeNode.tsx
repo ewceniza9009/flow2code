@@ -9,26 +9,18 @@ type CustomNodeProps = NodeProps<NodeData> & {
 
 const renderShape = (shapeType: string, fill: string, stroke: string, opacity: number) => {
   // React expects camelCase for SVG properties like fillOpacity and strokeOpacity
-  const shapeProps = { fill, stroke, fillOpacity: opacity, strokeOpacity: opacity };
+  const shapeProps = { fill, stroke, fillOpacity: opacity, strokeOpacity: opacity, vectorEffect: 'non-scaling-stroke' };
   switch (shapeType) {
     case 'Rectangle':
-      return <rect x="0" y="0" width="100%" height="100%" rx="8" {...shapeProps} strokeWidth="4px" />;
+      return <rect x="0" y="0" width="100%" height="100%" rx="2" ry="2" {...shapeProps} strokeWidth="4px" />;
     case 'Circle':
-      return <circle cx="50" cy="50" r="48" {...shapeProps} strokeWidth="4" />;
+      return <circle cx="50" cy="50" r="48" {...shapeProps} strokeWidth="2" />;
     case 'Diamond':
-      return <polygon points="50,2 98,50 50,98 2,50" {...shapeProps} strokeWidth="4" vectorEffect="non-scaling-stroke" />;
-    case 'Cylinder':
-      return (
-        <g {...shapeProps} strokeWidth="2" vectorEffect="non-scaling-stroke">
-          <ellipse cx="100" cy="25" rx="98" ry="24" />
-          <rect x="2" y="25" width="196" height="150" />
-          <ellipse cx="100" cy="175" rx="98" ry="24" />
-        </g>
-      );
+      return <polygon points="50,2 98,50 50,98 2,50" {...shapeProps} strokeWidth="2" vectorEffect="non-scaling-stroke" />;
     case 'ArrowRight':
-      return <path d="M0 25 L75 25 L75 0 L100 50 L75 100 L75 75 L0 75 Z" {...shapeProps} strokeLinejoin="round" />;
+      return <path d="M0 25 L75 25 L75 0 L100 50 L75 100 L75 75 L0 75 Z" strokeWidth="2" {...shapeProps} strokeLinejoin="round" />;
     case 'ArrowLeft':
-      return <path d="M100 25 L25 25 L25 0 L0 50 L25 100 L25 75 L100 75 Z" {...shapeProps} strokeLinejoin="round" />;
+      return <path d="M100 25 L25 25 L25 0 L0 50 L25 100 L25 75 L100 75 Z" strokeWidth="2" {...shapeProps} strokeLinejoin="round" />;
     default:
       return <rect width="100" height="100" fill="red" stroke="black" strokeWidth="2" />;
   }
