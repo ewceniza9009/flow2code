@@ -3,6 +3,7 @@ import AppLayout from "./components/layout/AppLayout";
 import { useStore } from './store/useStore';
 import NewProjectModal from './components/modals/NewProjectModal';
 import { db } from './lib/db';
+import { ReactFlowProvider } from 'reactflow';
 
 function App() {
   const {
@@ -21,16 +22,29 @@ function App() {
 
   useEffect(() => {
     const initializeApp = async () => {
-      const projectsFromDb = await db.projects.toArray();
-      if (projectsFromDb.length === 0) {
-        openNewProjectModal();
-      } else {
-        await loadProjects();
-        const firstProject = projectsFromDb[0];
-        const latestSnapshot = firstProject.snapshots[firstProject.snapshots.length - 1];
-        setActiveProject(firstProject);
-        setNodes(latestSnapshot.nodes);
-        setEdges(latestSnapshot.edges);
+      try {
+        const projectsFromDb = await db.projects.toArray();
+        if (projectsFromDb.length === 0) {
+          openNewProjectModal();
+        } else {
+          await loadProjects();
+          const firstProject = projectsFromDb[0];
+          
+          if (firstProject.snapshots && firstProject.snapshots.length > 0) {
+            const latestSnapshot = firstProject.snapshots[firstProject.snapshots.length - 1];
+            setActiveProject(firstProject);
+            setNodes(latestSnapshot.nodes);
+            setEdges(latestSnapshot.edges);
+          } else {
+            console.warn(`Project "${firstProject.name}" found with no snapshots. Loading an empty canvas.`);
+            setActiveProject(firstProject);
+            setNodes([]);
+            setEdges([]);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to initialize the application:", error);
+        alert("A critical error occurred while loading project data. Please try clearing your browser's application data if the problem persists.");
       }
     };
     initializeApp();
@@ -68,7 +82,9 @@ function App() {
   return (
     <div className="h-screen w-screen flex flex-col">
       {isNewProjectModalOpen && <NewProjectModal />}
-      <AppLayout />
+      <ReactFlowProvider>
+        <AppLayout />
+      </ReactFlowProvider>
     </div>
   );
 }

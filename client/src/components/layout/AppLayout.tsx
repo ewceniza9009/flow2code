@@ -5,9 +5,17 @@ import PropertiesPanel from "../sidebar/PropertiesPanel";
 import { ReactFlowProvider } from "reactflow";
 import { useStore } from '@/store/useStore';
 import ProjectSettingsModal from '../modals/ProjectSettingsModal';
+import SuggestionsPanel from '../sidebar/SuggestionPanel';
 
 export default function AppLayout() {
-  const { isNodeLibraryOpen, isPropertiesPanelOpen, setIsNodeLibraryOpen, setIsPropertiesPanelOpen, isSettingsModalOpen } = useStore();
+  const { 
+    isNodeLibraryOpen, 
+    isPropertiesPanelOpen, 
+    setIsNodeLibraryOpen, 
+    setIsPropertiesPanelOpen, 
+    isSettingsModalOpen,
+    isSuggestionsPanelOpen 
+  } = useStore();
 
   const toggleLeftPanel = () => {
     setIsNodeLibraryOpen(!isNodeLibraryOpen);
@@ -36,6 +44,9 @@ export default function AppLayout() {
             <PropertiesPanel />
           </div>
         )}
+
+        {isSuggestionsPanelOpen && <SuggestionsPanel />}
+        
         {isSettingsModalOpen && <ProjectSettingsModal />}
       </div>
     </div>

@@ -35,6 +35,7 @@ interface AppState {
   selectedEdge: Edge | null;
   isNewProjectModalOpen: boolean;
   isGenerating: boolean;
+  isChecking: boolean;
   contextMenu: ContextMenuState | null;
   currentFlowId: string | null;
   isDarkMode: boolean;
@@ -69,6 +70,7 @@ interface AppState {
   openNewProjectModal: () => void;
   closeNewProjectModal: () => void;
   setIsGenerating: (isGenerating: boolean) => void;
+  setIsChecking: (isChecking: boolean) => void;
   updateProjectSnapshot: () => void;
   renameProject: (projectId: string, newName: string) => Promise<void>;
   toggleDarkMode: () => void;
@@ -86,6 +88,7 @@ export const useStore = create<AppState>((set, get) => ({
   activeProject: null, projects: [], nodes: [], edges: [],
   selectedNode: null, selectedEdge: null,
   isNewProjectModalOpen: false, isGenerating: false,
+  isChecking: false,
   contextMenu: null, currentFlowId: null,
   isDarkMode: true,
   isNodeLibraryOpen: false,
@@ -99,6 +102,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
   isSettingsModalOpen: false,
   codeGenerationType: 'Flexible',
+  // --- MODIFICATION END ---
 
   loadProjects: async () => {
     const projectsFromDb = await db.projects.toArray();
@@ -493,7 +497,7 @@ export const useStore = create<AppState>((set, get) => ({
   openNewProjectModal: () => set({ isNewProjectModalOpen: true }),
   closeNewProjectModal: () => set({ isNewProjectModalOpen: false }),
   setIsGenerating: (isGenerating) => set({ isGenerating }),
-
+  setIsChecking: (isChecking) => set({ isChecking }),
   updateProjectSnapshot: debounce(async () => {
     const { activeProject, nodes, edges } = get();
     if (!activeProject) return;

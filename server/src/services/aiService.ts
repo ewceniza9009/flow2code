@@ -5,7 +5,46 @@ if (!apiKey) {
     throw new Error("GEMINI_API_KEY is not set in environment variables.");
 }
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-05-20" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+
+function extractJsonFromString(text: string): any {
+    const firstBracket = text.indexOf('{');
+    const firstSquareBracket = text.indexOf('[');
+    
+    let startIndex = -1;
+    
+    if (firstBracket === -1 && firstSquareBracket === -1) {
+        throw new Error("No JSON object or array found in the AI response.");
+    }
+
+    if (firstBracket === -1) {
+        startIndex = firstSquareBracket;
+    } else if (firstSquareBracket === -1) {
+        startIndex = firstBracket;
+    } else {
+        startIndex = Math.min(firstBracket, firstSquareBracket);
+    }
+
+    const lastBracket = text.lastIndexOf('}');
+    const lastSquareBracket = text.lastIndexOf(']');
+
+    if (lastBracket === -1 && lastSquareBracket === -1) {
+        throw new Error("JSON object or array is not properly closed in the AI response.");
+    }
+    
+    const endIndex = Math.max(lastBracket, lastSquareBracket);
+
+    const jsonString = text.substring(startIndex, endIndex + 1);
+    
+    try {
+        return JSON.parse(jsonString);
+    } catch (error) {
+        console.error("Failed to parse extracted JSON string:", jsonString);
+        throw new Error("Could not parse the JSON extracted from the AI response.");
+    }
+}
+
 
 function getGenerationTypeInstructions(type: string): string {
     switch (type) {
@@ -141,102 +180,98 @@ function buildPrompt(project: any): string {
 }
 
 function buildSuggestionPrompt(project: any): string {
-    const { name, type, nodes, edges } = project;
+    const architecturalData = {
+        name: project.name,
+        type: project.type,
+        settings: project.settings,
+        nodes: project.nodes.map((node: any) => ({
+            id: node.id,
+            name: node.name,
+            type: node.type,
+            role: node.role,
+            requirements: node.requirements,
+        })),
+        edges: project.edges.map((edge: any) => ({
+            source: edge.source,
+            target: edge.target,
+            type: edge.type,
+        })),
+    };
 
-    const nodeDetails = nodes.map((node: any) => ({ ...node, config: node.config || {} }));
-    const edgeDetails = edges.map((edge: any) => ({ ...edge, data: edge.data || {} }));
-
-    const systemDesign = `
-      Project Name: ${name}
-      Architecture Type: ${type}
-      Nodes (Services/Components):
-      ${JSON.stringify(nodeDetails, null, 2)}
-      Edges (Connections):
-      ${JSON.stringify(edgeDetails, null, 2)}
-    `;
+    const systemDesign = JSON.stringify(architecturalData, null, 2);
 
     return `
-    You are an AI architectural assistant. Your task is to analyze a provided system design and offer constructive, actionable suggestions to improve it.
+    You are an expert AI software architect. Your task is to analyze the provided system design and return a JSON array of actionable improvement suggestions.
 
     **System Design:**
+    \`\`\`json
     ${systemDesign}
+    \`\`\`
 
     **Instructions:**
-    1.  **Analyze the Diagram:** Review the nodes, edges, and their configurations to identify potential architectural issues.
-    2.  **Provide Suggestions:** Generate suggestions categorized by 'architectural', 'node', or 'edge'.
-    3.  **Focus on Improvements:** Suggestions should cover best practices such as:
-        -   Better separation of concerns.
-        -   Optimized communication patterns (e.g., suggesting gRPC for internal services).
-        -   Missing components (e.g., a message queue for a microservice that should be event-driven).
-        -   Potential scalability or security improvements.
-    4.  **Output Format:** The output MUST be a single, valid JSON array of objects. Each object should have the following structure:
-        -   **id:** A unique string identifier.
-        -   **type:** 'architectural', 'node', or 'edge'.
-        -   **title:** A concise title for the suggestion.
-        -   **description:** A detailed explanation of the suggestion and its benefits.
-        -   **actions:** An array of objects describing how to implement the suggestion. Each action should have a 'label', an 'action' type ('add', 'remove', 'update'), and a 'payload' with the necessary data to perform the action.
+    1.  **Analyze the Design:** Review the nodes, edges, and settings to identify potential issues related to best practices, security, scalability, and maintainability.
+    2.  **Generate Suggestions:** Provide concrete suggestions to address any identified issues.
+    3.  **Strict Output Format:** Your response MUST be ONLY a single, valid JSON array of objects.
+        -   ABSOLUTELY NO commentary, explanations, or conversational text before or after the JSON array.
+        -   Your entire response must be parsable by \`JSON.parse()\`.
+        -   Each object in the array must conform to this exact structure:
+            -   \`id\`: A unique string identifier.
+            -   \`type\`: 'architectural', 'node', or 'edge'.
+            -   \`title\`: A concise title for the suggestion.
+            -   \`description\`: A detailed explanation of the issue and the proposed improvement.
+            -   \`actions\`: An array of objects describing how to implement the suggestion. Each action must have a \`label\`, an \`action\` type ('add', 'remove', 'update'), and a \`payload\`.
 
-    **Example Output Structure:**
+    **Example of a valid response:**
     [
       {
-        "id": "suggestion-1",
+        "id": "sugg-sec-1",
         "type": "architectural",
-        "title": "Introduce a Message Queue",
-        "description": "For a microservices architecture, using a message queue like RabbitMQ between the 'frontend' and 'notification-service' will decouple them and improve resilience. We suggest replacing the direct REST call with a message-based communication.",
+        "title": "Add an Authentication Service",
+        "description": "The current design lacks a dedicated authentication service, which is critical for securing APIs. Adding an auth service (e.g., using JWT) will centralize user management and protect your endpoints.",
         "actions": [
           {
-            "label": "Change Edge Type to RabbitMQ",
-            "action": "update",
-            "payload": { "edgeId": "edge-123", "label": "RabbitMQ" }
-          },
-          {
-            "label": "Add RabbitMQ Node",
+            "label": "Add Auth Service Node",
             "action": "add",
-            "payload": { "type": "msg-rabbitmq", "name": "RabbitMQ Broker" }
+            "payload": { "type": "sec-auth", "name": "Auth Service" }
           }
         ]
       }
     ]
 
-    Now, generate suggestions for the provided system design.
+    Begin your JSON response now.
     `;
 }
 
 
 export const generateCodeFromDiagram = async (project: any): Promise<Record<string, string>> => {
     const prompt = buildPrompt(project);
+    console.log("--- PROMPT SENT TO AI (Code Generation) ---\n", prompt, "\n------------------------------------"); // ADDED FOR DEBUGGING
     
     try {
         const result = await model.generateContent(prompt);
         const response = result.response;
         const text = response.text();
-
-        // Clean the response to ensure it's valid JSON
-        const jsonString = text.trim().replace(/^```json\n/, '').replace(/\n```$/, '');
-        
-        return JSON.parse(jsonString);
-
+        console.log("--- RAW AI RESPONSE (Code Generation) ---\n", text, "\n------------------------------------"); // ADDED FOR DEBUGGING
+        return extractJsonFromString(text);
     } catch (error) {
-        console.error("Error calling Generative AI API:", error);
+        console.error("Error calling Generative AI API for code generation:", error);
         throw new Error("Failed to generate code from AI service.");
     }
 };
 
 export const generateSuggestionsFromDiagram = async (project: any): Promise<any[]> => {
     const prompt = buildSuggestionPrompt(project);
+    console.log("--- PROMPT SENT TO AI (Suggestions) ---\n", prompt, "\n------------------------------------"); // ADDED FOR DEBUGGING
     
     try {
         const result = await model.generateContent(prompt);
         const response = result.response;
         const text = response.text();
-
-        // Clean the response to ensure it's valid JSON
-        const jsonString = text.trim().replace(/^```json\n/, '').replace(/\n```$/, '');
-        
-        return JSON.parse(jsonString);
-
+        console.log("--- RAW AI RESPONSE (Suggestions) ---\n", text, "\n------------------------------------"); // ADDED FOR DEBUGGING
+        return extractJsonFromString(text);
     } catch (error) {
         console.error("Error calling Generative AI API for suggestions:", error);
+        console.error("Full error object:", error); // ADDED FOR DEBUGGING
         throw new Error("Failed to generate suggestions from AI service.");
     }
 };

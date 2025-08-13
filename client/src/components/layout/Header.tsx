@@ -18,6 +18,8 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
     exitSubflow,
     openNewProjectModal,
     isGenerating,
+    isChecking,
+    setIsChecking,
     setActiveProject,
     setNodes,
     setEdges,
@@ -141,15 +143,25 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
     if (!activeProject) return;
     setIsGenerating(true);
     setIsGenerateMenuOpen(false);
-    await generateCode(activeProject, codeGenerationType);
-    setIsGenerating(false);
+    try {
+      await generateCode(activeProject, codeGenerationType);
+    } finally {
+      setIsGenerating(false);
+    }
   };
   
+  // --- MODIFICATION START ---
   const handleAICheck = async () => {
     if (!activeProject) return;
-    setIsSuggestionsPanelOpen(true);
-    await checkAndSuggest(activeProject);
+    setIsChecking(true);
+    try {
+      setIsSuggestionsPanelOpen(true);
+      await checkAndSuggest(activeProject);
+    } finally {
+      setIsChecking(false);
+    }
   };
+  // --- MODIFICATION END ---
 
   const filteredProjects = projects?.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())) || [];
 
@@ -268,18 +280,21 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
 
       {/* Center-aligned: Primary Actions */}
       <div className='flex items-center gap-2'>
+        {/* --- MODIFICATION START --- */}
         <button
           onClick={handleAICheck}
-          disabled={!activeProject}
+          disabled={!activeProject || isGenerating || isChecking}
           className="flex items-center gap-1 px-3 py-1 text-sm font-semibold bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors"
         >
-          <Sparkles size={16} /> AI Check
+          <Sparkles size={16} className={isChecking ? 'animate-pulse' : ''}/>
+          {isChecking ? 'Checking...' : 'AI Check'}
         </button>
+        {/* --- MODIFICATION END --- */}
 
         <div className="relative flex" ref={generateMenuRef}>
           <button
             onClick={handleGenerate}
-            disabled={isGenerating || !activeProject}
+            disabled={isGenerating || !activeProject || isChecking}
             className="flex items-center gap-1 pl-3 pr-2 py-1 text-sm font-semibold bg-primary text-white rounded-l-md hover:bg-primary-hover disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors"
           >
             <Play size={16} />
@@ -287,7 +302,7 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
           </button>
           <button
             onClick={() => setIsGenerateMenuOpen(!isGenerateMenuOpen)}
-            disabled={isGenerating || !activeProject}
+            disabled={isGenerating || !activeProject || isChecking}
             className="px-2 py-1 bg-primary text-white rounded-r-md hover:bg-primary-hover disabled:bg-gray-500 disabled:cursor-not-allowed border-l border-teal-600"
           >
             <ChevronDown size={16} className={`transition-transform ${isGenerateMenuOpen ? 'rotate-180' : ''}`} />

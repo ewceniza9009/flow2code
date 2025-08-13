@@ -2,7 +2,7 @@
   "name": "flow2code-monorepo",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter client dev",
+    "dev": "pnpm -r --parallel dev",
     "build": "pnpm --filter client build",
     "start:server": "pnpm --filter server start"
   },
