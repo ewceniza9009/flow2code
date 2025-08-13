@@ -5,7 +5,7 @@ import {
   OnNodesChange, OnEdgesChange, OnConnect,
   MarkerType
 } from 'reactflow';
-import { Project, ProjectSnapshot, ProjectSettings, CodeGenerationType } from '@/types/project';
+import { Project, ProjectSnapshot, ProjectSettings, CodeGenerationType, ProjectType } from '@/types/project';
 import { db } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import { debounce } from 'lodash';
@@ -83,6 +83,7 @@ interface AppState {
   openSettingsModal: () => void;
   closeSettingsModal: () => void;
   setCodeGenerationType: (type: CodeGenerationType) => void;
+  updateProjectType: (newType: ProjectType) => Promise<void>;
   addNode: (nodeData: any) => void;
   applySuggestionAction: (action: AISuggestion['actions'][0]) => void;
   removeSuggestion: (suggestionId: string) => void;
@@ -234,7 +235,7 @@ export const useStore = create<AppState>((set, get) => ({
           const newSubflowNodes = subflow.nodes.map(subNode =>
             subNode.id === nodeId ? { ...subNode, data: { ...subNode.data, ...data } } : subNode
           );
-          if (get().selectedNode && get().selectedNode!.id === nodeId) {
+          if (get().selectedNode && get().selectedNode?.id === nodeId) {
             updatedSelectedNode = newSubflowNodes.find(sn => sn.id === nodeId) || updatedSelectedNode;
           }
           return { ...n, data: { ...n.data, subflow: { ...subflow, nodes: newSubflowNodes } } };
@@ -245,7 +246,7 @@ export const useStore = create<AppState>((set, get) => ({
       updatedNodes = nodes.map(n =>
         n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n
       );
-      if (get().selectedNode && get().selectedNode!.id === nodeId) {
+      if (get().selectedNode && get().selectedNode?.id === nodeId) {
         updatedSelectedNode = updatedNodes.find(n => n.id === nodeId) || updatedSelectedNode;
       }
     }
@@ -266,7 +267,7 @@ export const useStore = create<AppState>((set, get) => ({
             const newSubflowNodes = subflow.nodes.map(subNode =>
               subNode.id === nodeId ? { ...subNode, style: { ...subNode.style, ...dimensions } } : subNode
             );
-            if (state.selectedNode && state.selectedNode.id === nodeId) {
+            if (state.selectedNode && state.selectedNode?.id === nodeId) {
               updatedSelectedNode = newSubflowNodes.find(sn => sn.id === nodeId) || updatedSelectedNode;
             }
             return { ...n, data: { ...n.data, subflow: { ...subflow, nodes: newSubflowNodes } } };
@@ -277,7 +278,7 @@ export const useStore = create<AppState>((set, get) => ({
         updatedNodes = state.nodes.map(n =>
           n.id === nodeId ? { ...n, style: { ...n.style, ...dimensions } } : n
         );
-        if (state.selectedNode && state.selectedNode.id === nodeId) {
+        if (state.selectedNode && state.selectedNode?.id === nodeId) {
           updatedSelectedNode = updatedNodes.find(n => n.id === nodeId) || updatedSelectedNode;
         }
       }
@@ -302,7 +303,7 @@ export const useStore = create<AppState>((set, get) => ({
             const newSubflowNodes = subflow.nodes.map(subNode =>
               subNode.id === nodeId ? { ...subNode, style: { ...subNode.style, ...style } } : subNode
             );
-            if (state.selectedNode && state.selectedNode.id === nodeId) {
+            if (state.selectedNode && state.selectedNode?.id === nodeId) {
               updatedSelectedNode = newSubflowNodes.find(sn => sn.id === nodeId) || updatedSelectedNode;
             }
             return { ...n, data: { ...n.data, subflow: { ...subflow, nodes: newSubflowNodes } } };
@@ -313,7 +314,7 @@ export const useStore = create<AppState>((set, get) => ({
         updatedNodes = state.nodes.map(n =>
           n.id === nodeId ? { ...n, style: { ...n.style, ...style } } : n
         );
-        if (state.selectedNode && state.selectedNode.id === nodeId) {
+        if (state.selectedNode && state.selectedNode?.id === nodeId) {
           updatedSelectedNode = updatedNodes.find(n => n.id === nodeId) || updatedSelectedNode;
         }
       }
@@ -389,7 +390,7 @@ export const useStore = create<AppState>((set, get) => ({
             return n;
         });
         const parentNode = updatedNodes.find(n => n.id === state.currentFlowId);
-        return { nodes: updatedNodes, selectedEdge: parentNode?.data.subflow?.edges.find(e => e.id === edgeId) || null };
+        return { nodes: updatedNodes, selectedEdge: parentNode?.data.subflow?.edges?.find(e => e.id === edgeId) || null };
     });
     get().updateProjectSnapshot();
   },
@@ -526,9 +527,7 @@ export const useStore = create<AppState>((set, get) => ({
 
   addNode: (nodeData) => {
     const { type, name, ...restData } = nodeData;
-    // --- MODIFICATION START: Add explicit types to fix implicit 'any' ---
     const nodeDefinition = NODE_DEFINITIONS.flatMap((c: NodeCategory) => c.nodes).find((n: NodeDefinition) => n.type === type);
-    // --- MODIFICATION END ---
     if (!nodeDefinition) {
       console.error("Node definition not found for type:", type);
       return;
@@ -560,8 +559,19 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
+  // --- MODIFICATION START: Added updateProjectType function and expanded applySuggestionAction ---
+  updateProjectType: async (newType: ProjectType) => {
+    const { activeProject } = get();
+    if (!activeProject) return;
+
+    const updatedProject = { ...activeProject, type: newType };
+
+    await db.projects.update(activeProject.id, { type: newType });
+    set({ activeProject: updatedProject });
+  },
+
   applySuggestionAction: (action) => {
-    const { updateNodeData, updateEdgeData, deleteElement, addNode } = get();
+    const { updateNodeData, updateEdgeData, deleteElement, addNode, updateProjectType } = get();
 
     switch (action.action) {
       case 'add':
@@ -583,6 +593,8 @@ export const useStore = create<AppState>((set, get) => ({
         } else if (action.payload.edgeId) {
           const { edgeId, ...data } = action.payload;
           updateEdgeData(edgeId, data);
+        } else if (action.payload.architecture) { // Handle the new architectural change
+          updateProjectType(action.payload.architecture);
         }
         break;
       default:

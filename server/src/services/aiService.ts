@@ -1,6 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-// --- MODIFICATION: Changed the import path ---
-import { NODE_DEFINITIONS } from '@flow2code/shared';
+import { NODE_DEFINITIONS, NodeCategory, NodeDefinition } from '@flow2code/shared';
 
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
@@ -8,8 +7,6 @@ if (!apiKey) {
 }
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-// ... the rest of the file remains the same ...
 
 function extractJsonFromString(text: string): any {
     const firstBracket = text.indexOf('{');
@@ -47,7 +44,6 @@ function extractJsonFromString(text: string): any {
         throw new Error("Could not parse the JSON extracted from the AI response.");
     }
 }
-
 
 function getGenerationTypeInstructions(type: string): string {
     switch (type) {
@@ -183,7 +179,7 @@ function buildPrompt(project: any): string {
 }
 
 function buildSuggestionPrompt(project: any): string {
-    const validNodeTypes = NODE_DEFINITIONS.flatMap(category => category.nodes.map(node => node.type));
+    const validNodeTypes = NODE_DEFINITIONS.flatMap((category: NodeCategory) => category.nodes.map((node: NodeDefinition) => node.type));
 
     const architecturalData = {
         name: project.name,
@@ -216,29 +212,33 @@ function buildSuggestionPrompt(project: any): string {
     **Instructions & Constraints:**
     1.  **Analyze the Design:** Review the nodes, edges, and settings to identify potential issues related to best practices, security, scalability, and maintainability.
     2.  **Generate Suggestions:** Provide concrete suggestions to address any identified issues.
-    3.  **Use Valid Node Types:** If you suggest adding a new node (action: 'add'), the \`type\` in the payload **MUST** be one of the following values: ${JSON.stringify(validNodeTypes)}. Do not invent a new type.
-    4.  **Strict Output Format:** Your response MUST be ONLY a single, valid JSON array of objects.
-        -   ABSOLUTELY NO commentary, explanations, or conversational text before or after the JSON array.
-        -   Your entire response must be parsable by \`JSON.parse()\`.
-        -   Each object in the array must conform to this exact structure:
-            -   \`id\`: A unique string identifier.
-            -   \`type\`: 'architectural', 'node', or 'edge'.
-            -   \`title\`: A concise title for the suggestion.
-            -   \`description\`: A detailed explanation of the issue and the proposed improvement.
-            -   \`actions\`: An array of objects describing how to implement the suggestion. Each action must have a \`label\`, an \`action\` type ('add', 'remove', 'update'), and a \`payload\`.
+    3.  **Strict Output Format:** Your response MUST be ONLY a single, valid JSON array of objects. Your entire response must be parsable by \`JSON.parse()\`. Each object in the array must conform to this exact structure:
+        -   \`id\`: A unique string identifier.
+        -   \`type\`: 'architectural', 'node', or 'edge'.
+        -   \`title\`: A concise title for the suggestion.
+        -   \`description\`: A detailed explanation of the issue and the proposed improvement.
+        -   \`actions\`: An array of action objects.
+
+    4.  **Action Object Schema:** Each object in the \`actions\` array MUST follow one of these schemas:
+        -   **For adding a node:** \`{ "action": "add", "payload": { "type": "...", "name": "..." } }\`. The \`type\` MUST be one of these values: ${JSON.stringify(validNodeTypes)}.
+        -   **For removing a node:** \`{ "action": "remove", "payload": { "nodeId": "..." } }\`.
+        -   **For removing an edge:** \`{ "action": "remove", "payload": { "edgeId": "..." } }\`.
+        -   **For updating a node:** \`{ "action": "update", "payload": { "nodeId": "...", "name": "...", "requirements": "..." } }\`. Include only the fields to be changed.
+        -   **For updating an edge:** \`{ "action": "update", "payload": { "edgeId": "...", "label": "..." } }\`.
+        -   **For changing architecture type:** \`{ "action": "update", "payload": { "architecture": "Microservices" | "Monolithic" } }\`.
 
     **Example of a valid response:**
     [
       {
-        "id": "sugg-sec-1",
+        "id": "sugg-arch-1",
         "type": "architectural",
-        "title": "Add an Authentication Service",
-        "description": "The current design lacks a dedicated authentication service... etc.",
+        "title": "Migrate to Microservices",
+        "description": "Migrating to microservices will improve scalability and maintainability.",
         "actions": [
           {
-            "label": "Add Auth Service Node",
-            "action": "add",
-            "payload": { "type": "sec-auth", "name": "Auth Service" }
+            "label": "Change to Microservices",
+            "action": "update",
+            "payload": { "architecture": "Microservices" }
           }
         ]
       }
