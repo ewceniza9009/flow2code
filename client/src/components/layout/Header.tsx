@@ -28,6 +28,8 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
     setIsSuggestionsPanelOpen,
     renameProject,
     openSettingsModal,
+    codeGenerationType,
+    setCodeGenerationType,
   } = useStore();
 
   const projects = useLiveQuery(() => db.projects.toArray());
@@ -35,12 +37,14 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
   
   const [isProjectsListOpen, setIsProjectsListOpen] = useState(false);
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+  const [isGenerateMenuOpen, setIsGenerateMenuOpen] = useState(false);
   const [isRenamingActive, setIsRenamingActive] = useState(false);
   const [projectNameInput, setProjectNameInput] = useState(activeProject?.name || '');
   const [searchTerm, setSearchTerm] = useState('');
   
   const projectListRef = useRef<HTMLDivElement>(null);
   const actionsMenuRef = useRef<HTMLDivElement>(null);
+  const generateMenuRef = useRef<HTMLDivElement>(null);
   const projectNameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -63,6 +67,9 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
       if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target as Node)) {
         setIsActionsMenuOpen(false);
       }
+      if (generateMenuRef.current && !generateMenuRef.current.contains(event.target as Node)) {
+        setIsGenerateMenuOpen(false);
+      }
       if (isRenamingActive && projectNameRef.current && !projectNameRef.current.contains(event.target as Node)) {
         handleRenameBlur();
       }
@@ -72,7 +79,7 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [projectListRef, actionsMenuRef, isProjectsListOpen, isActionsMenuOpen, isRenamingActive, projectNameInput, activeProject, renameProject]);
+  }, [projectListRef, actionsMenuRef, generateMenuRef, isProjectsListOpen, isActionsMenuOpen, isGenerateMenuOpen, isRenamingActive, projectNameInput, activeProject, renameProject]);
 
   const handleProjectSelect = async (projectId: string) => {
     const project = await db.projects.get(projectId);
@@ -133,7 +140,8 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
   const handleGenerate = async () => {
     if (!activeProject) return;
     setIsGenerating(true);
-    await generateCode(activeProject);
+    setIsGenerateMenuOpen(false);
+    await generateCode(activeProject, codeGenerationType);
     setIsGenerating(false);
   };
   
@@ -267,14 +275,58 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
         >
           <Sparkles size={16} /> AI Check
         </button>
-        <button
-          onClick={handleGenerate}
-          disabled={isGenerating || !activeProject}
-          className="flex items-center gap-1 px-3 py-1 text-sm font-semibold bg-primary text-white rounded-md hover:bg-primary-hover disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors"
-        >
-          <Play size={16} />
-          {isGenerating ? 'Generating...' : 'Generate Code'}
-        </button>
+
+        <div className="relative flex" ref={generateMenuRef}>
+          <button
+            onClick={handleGenerate}
+            disabled={isGenerating || !activeProject}
+            className="flex items-center gap-1 pl-3 pr-2 py-1 text-sm font-semibold bg-primary text-white rounded-l-md hover:bg-primary-hover disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors"
+          >
+            <Play size={16} />
+            {isGenerating ? 'Generating...' : `Generate (${codeGenerationType})`}
+          </button>
+          <button
+            onClick={() => setIsGenerateMenuOpen(!isGenerateMenuOpen)}
+            disabled={isGenerating || !activeProject}
+            className="px-2 py-1 bg-primary text-white rounded-r-md hover:bg-primary-hover disabled:bg-gray-500 disabled:cursor-not-allowed border-l border-teal-600"
+          >
+            <ChevronDown size={16} className={`transition-transform ${isGenerateMenuOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isGenerateMenuOpen && (
+            <div className="absolute top-11 right-0 z-20 flex flex-col p-2 bg-surface dark:bg-dark-surface border border-border dark:border-dark-border rounded-md shadow-lg w-56">
+              <div
+                onClick={() => { setCodeGenerationType('Starter'); setIsGenerateMenuOpen(false); }}
+                className="flex flex-col gap-1 px-2 py-2 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background cursor-pointer"
+              >
+                <h4 className="font-semibold">Starter Project</h4>
+                <p className="text-xs text-text-muted dark:text-dark-text-muted">Architectural scaffolding and config files.</p>
+              </div>
+              <div
+                onClick={() => { setCodeGenerationType('Flexible'); setIsGenerateMenuOpen(false); }}
+                className="flex flex-col gap-1 px-2 py-2 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background cursor-pointer"
+              >
+                <h4 className="font-semibold">Flexible Project</h4>
+                <p className="text-xs text-text-muted dark:text-dark-text-muted">Functional code with hooks for custom logic.</p>
+              </div>
+              <div
+                onClick={() => { setCodeGenerationType('Complete'); setIsGenerateMenuOpen(false); }}
+                className="flex flex-col gap-1 px-2 py-2 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background cursor-pointer"
+              >
+                <h4 className="font-semibold">Complete Project</h4>
+                <p className="text-xs text-text-muted dark:text-dark-text-muted">Production-ready, refined, with tests.</p>
+              </div>
+              <div className="my-1 h-px bg-border dark:bg-dark-border" />
+              <div
+                onClick={() => { setCodeGenerationType('Test-Driven'); setIsGenerateMenuOpen(false); }}
+                className="flex flex-col gap-1 px-2 py-2 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background cursor-pointer"
+              >
+                <h4 className="font-semibold">Test-Driven Project</h4>
+                <p className="text-xs text-text-muted dark:text-dark-text-muted">Generate tests first, then minimal code to pass.</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Right-aligned: Utility Controls */}

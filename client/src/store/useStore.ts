@@ -5,7 +5,7 @@ import {
   OnNodesChange, OnEdgesChange, OnConnect,
   MarkerType
 } from 'reactflow';
-import { Project, ProjectSnapshot, ProjectSettings } from '@/types/project';
+import { Project, ProjectSnapshot, ProjectSettings, CodeGenerationType } from '@/types/project';
 import { db } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import { debounce } from 'lodash';
@@ -44,6 +44,7 @@ interface AppState {
   suggestions: AISuggestion[];
   projectSettings: ProjectSettings;
   isSettingsModalOpen: boolean;
+  codeGenerationType: CodeGenerationType;
   loadProjects: () => Promise<void>;
   setActiveProject: (project: Project | null) => void;
   setNodes: (nodes: Node<NodeData>[]) => void;
@@ -78,6 +79,7 @@ interface AppState {
   setProjectSettings: (settings: ProjectSettings) => void;
   openSettingsModal: () => void;
   closeSettingsModal: () => void;
+  setCodeGenerationType: (type: CodeGenerationType) => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -96,6 +98,7 @@ export const useStore = create<AppState>((set, get) => ({
     cicdTooling: '',
   },
   isSettingsModalOpen: false,
+  codeGenerationType: 'Flexible',
 
   loadProjects: async () => {
     const projectsFromDb = await db.projects.toArray();
@@ -535,4 +538,5 @@ export const useStore = create<AppState>((set, get) => ({
   setProjectSettings: (settings: ProjectSettings) => set({ projectSettings: settings }),
   openSettingsModal: () => set({ isSettingsModalOpen: true }),
   closeSettingsModal: () => set({ isSettingsModalOpen: false }),
+  setCodeGenerationType: (type) => set({ codeGenerationType: type }),
 }));

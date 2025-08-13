@@ -5,80 +5,152 @@ if (!apiKey) {
     throw new Error("GEMINI_API_KEY is not set in environment variables.");
 }
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-05-20" });
+
+function getGenerationTypeInstructions(type: string): string {
+    switch (type) {
+        case 'Starter':
+            return `
+        **Primary Goal: Generate a Starter Project.**
+        This is for developers who need a kickstart. The focus is on structure, not function.
+        
+        **Deliverables:**
+        - A complete directory structure for all services.
+        - All necessary configuration files: \`package.json\`, \`tsconfig.json\`, \`.env.example\`, \`Dockerfile\`, \`docker-compose.yml\`.
+        - Code files with empty or placeholder function/class definitions. For example, a controller method should just be \`res.send('TODO: Implement');\` or have a comment.
+        - All wiring (imports, module registrations) should be in place.
+
+        **Non-Deliverables:**
+        - No business logic implementation.
+        - No unit or integration tests.
+        - No data validation or complex error handling.
+      `;
+        case 'Flexible':
+            return `
+        **Primary Goal: Generate a Flexible Project.**
+        This is the middle ground, creating a fully functional but easily extensible codebase.
+        
+        **Deliverables:**
+        - A fully working, runnable application based on the requirements.
+        - Modular code with a clear separation of concerns (e.g., controllers, services, repositories).
+        - Explicit hooks and comments (e.g., \`// HINT: Add your custom business logic here\`) in places where a developer is likely to extend the code.
+        - Data Transfer Objects (DTOs) for API contracts.
+        - Basic error handling middleware and validation.
+
+        **Non-Deliverables:**
+        - Exhaustive test suites (a few example tests are acceptable).
+        - Highly optimized, production-hardened code.
+      `;
+        case 'Complete':
+            return `
+        **Primary Goal: Generate a Complete Project.**
+        This delivers a production-ready and highly refined codebase. Assume the requirements are final.
+        
+        **Deliverables:**
+        - A minimal yet powerful codebase that is ready for deployment.
+        - Robust error handling, data validation (e.g., using zod, joi, or data annotations), and logging.
+        - A comprehensive suite of automated tests (unit and integration) for core functionality, covering both success and failure cases.
+        - Adherence to the YAGNI ("You Ain't Gonna Need It") principle; no unnecessary code.
+        - Clean, self-documenting code that follows industry best practices.
+      `;
+        case 'Test-Driven':
+            return `
+        **Primary Goal: Generate a Test-Driven Project.**
+        Adopt a strict Test-Driven Development (TDD) workflow. The tests are the specification.
+        
+        **Deliverables (in this order of thinking):**
+        1.  **Tests First:** A comprehensive suite of initially failing tests (unit, integration) that fully cover the requirements for every component and endpoint.
+        2.  **Minimal Code:** The simplest, cleanest implementation code required to make all the generated tests pass.
+        - The final output must contain both the complete test files and the implementation files.
+
+        **Non-Deliverables:**
+        - Any code that is not explicitly required to make a test pass.
+      `;
+        default:
+            return getGenerationTypeInstructions('Flexible'); // Default to Flexible if type is unknown.
+    }
+}
 
 function buildPrompt(project: any): string {
-    const { name, type, nodes, edges } = project;
+    const { name, type, nodes, edges, settings, codeGenerationType } = project;
 
-    const nodeDetails = nodes.map((node: any) => ({
-      ...node,
-      config: node.config || {}, // Add config field if present
-    }));
-    
-    const edgeDetails = edges.map((edge: any) => ({
-      ...edge,
-      data: edge.data || {}, // Add data field if present
-    }));
+    const nodeDetails = nodes.map((node: any) => ({ ...node, config: node.config || {} }));
+    const edgeDetails = edges.map((edge: any) => ({ ...edge, data: edge.data || {} }));
 
     const systemDesign = `
       Project Name: ${name}
       Architecture Type: ${type}
-
+      Settings: ${JSON.stringify(settings, null, 2)}
       Nodes (Services/Components):
       ${JSON.stringify(nodeDetails, null, 2)}
-
       Edges (Connections):
       ${JSON.stringify(edgeDetails, null, 2)}
     `;
 
+    const generationInstructions = getGenerationTypeInstructions(codeGenerationType);
+
     return `
-    You are Flow2Code, an expert software architect and full-stack developer AI.
-    Your task is to generate a complete, runnable, and production-quality codebase based on a provided system design.
+    You are Flow2Code, an expert-level AI software architect and full-stack developer. Your purpose is to translate a visual system design into a complete, high-quality, runnable codebase.
 
-    **System Design:**
+    **Your Guiding Philosophy:**
+    - **Developer Experience is Key:** The generated code should be easy to understand, run, and extend.
+    - **Code is for Humans First:** Prioritize clarity, simplicity, and maintainability.
+    - **Pragmatism over Dogma:** Choose the right tools and patterns for the job as described in the requirements, not just what's popular.
+
+    **Your Task:**
+    Generate a complete codebase based on the provided system design. Your primary directive is to adhere to the **Generation Type** specified below. All other instructions are in service of this goal.
+
+    ---
+    ### System Design to Implement
     ${systemDesign}
+    ---
+    ### Primary Directive: Generation Type
+    ${generationInstructions}
+    ---
+    ### How to Interpret the System Design
 
-    **Instructions:**
-    1.  **Analyze the System Design:** Carefully examine the nodes (services, frontends, databases) and edges (API calls, data flows) to understand the architecture. Pay close attention to the 'config' and 'data' fields for specific implementation details.
-    2.  **Generate a File Structure:** Create a logical directory and file structure for the entire project. For a 'Microservices' architecture, create a separate directory for each service. For a 'Monolithic' architecture, create a single, well-structured codebase.
-    3.  **Write Complete Code:** For each file, write the full source code. Do NOT use placeholders, stubs, or "your code here" comments. The code must be functional.
-    4.  **Include Configuration:** Generate all necessary configuration files, such as \`package.json\`, \`Dockerfile\`, \`tsconfig.json\`, \`.gitignore\`, and environment variable example files (\`.env.example\`).
-    5.  **Add DevOps Files:** Create a root \`docker-compose.yml\` file to orchestrate all services. Ensure ports are mapped correctly and services can communicate. Include a helpful \`README.md\` at the root.
-    6.  **Adhere to Best Practices:** Use modern syntax, industry best practices, and appropriate design patterns for the specified tech stacks.
-    7.  **Output Format:** The final output MUST be a single, valid JSON object. The keys of this object must be the full file paths (e.g., "task-manager-api/src/app.js"), and the values must be the complete file content as a single string.
+    1.  **Nodes are Your Components:**
+        - The \`requirements\` field for each node is the **source of truth** for its specific functionality. Implement it faithfully.
+        - The \`techStack\` dictates the language and framework.
+        - The \`config\` field provides parameters like port numbers or database names. Use them.
 
-    **Example Output Structure:**
-    {
-      "my-project/README.md": "# My Project...",
-      "my-project/docker-compose.yml": "version: '3.8'...",
-      "my-project/frontend/package.json": "{ \\"name\\": \\"frontend\\" ... }",
-      "my-project/frontend/src/App.js": "import React from 'react'; ..."
-    }
+    2.  **Edges are the Interactions:**
+        - An edge from Service A to Service B defines a dependency. Service A is the client, Service B is the server.
+        - For a 'REST' edge, Service A must contain an HTTP client (e.g., using \`axios\` or \`fetch\`) to call an endpoint that you must create in Service B.
+        - For a 'DB' edge, the service must contain the necessary database client, connection logic, and queries (or ORM models) to interact with the database.
 
-    Now, generate the complete codebase for the provided system design.
+    3.  **Project Settings Guide the Infrastructure:**
+        - The project's \`deploymentStrategy\` must influence the generated infrastructure files. If 'Serverless', generate a \`serverless.yml\` or similar instead of a \`Dockerfile\`. If 'Kubernetes', include basic K8s YAML manifests. 'Docker' (default) implies \`Dockerfile\` and \`docker-compose.yml\`.
+
+    **General Principles (To be applied within the context of the Generation Type):**
+    - **Modularity:** Each component should be a self-contained module with a clear and logical internal file structure (e.g., \`src/controllers\`, \`src/services\`, \`src/routes\`).
+    - **Configuration:** Always use environment variables for secrets and configurations. Generate a complete \`.env.example\` file for each service.
+    - **Deployment:** The root of the project must contain a \`docker-compose.yml\` (or equivalent) to orchestrate all services for easy local startup.
+
+    **What to Avoid:**
+    - **DO NOT** invent features or functionality not described in the node \`requirements\`.
+    - **DO NOT** add any services, databases, or API endpoints not explicitly defined in the diagram. Stick to the provided design.
+
+    **Final Output Format:**
+    - The entire output MUST be a single, valid JSON object.
+    - The keys of the JSON object are the full file paths (e.g., "user-service/src/index.ts").
+    - The values are strings containing the complete, exact content for each file.
+
+    With this complete context, embody the role of Flow2Code. Analyze the system design and strictly adhere to the primary directive. Generate the complete JSON output representing the project's file system. Begin.
     `;
 }
 
 function buildSuggestionPrompt(project: any): string {
     const { name, type, nodes, edges } = project;
 
-    const nodeDetails = nodes.map((node: any) => ({
-      ...node,
-      config: node.config || {},
-    }));
-    
-    const edgeDetails = edges.map((edge: any) => ({
-      ...edge,
-      data: edge.data || {},
-    }));
+    const nodeDetails = nodes.map((node: any) => ({ ...node, config: node.config || {} }));
+    const edgeDetails = edges.map((edge: any) => ({ ...edge, data: edge.data || {} }));
 
     const systemDesign = `
       Project Name: ${name}
       Architecture Type: ${type}
-
       Nodes (Services/Components):
       ${JSON.stringify(nodeDetails, null, 2)}
-
       Edges (Connections):
       ${JSON.stringify(edgeDetails, null, 2)}
     `;
@@ -121,19 +193,6 @@ function buildSuggestionPrompt(project: any): string {
             "label": "Add RabbitMQ Node",
             "action": "add",
             "payload": { "type": "msg-rabbitmq", "name": "RabbitMQ Broker" }
-          }
-        ]
-      },
-      {
-        "id": "suggestion-2",
-        "type": "node",
-        "title": "Set database credentials as environment variables",
-        "description": "It's a security best practice to manage sensitive data like database credentials via environment variables instead of hardcoding them in the source code.",
-        "actions": [
-          {
-            "label": "Add .env.example for PostgreSQL node",
-            "action": "update",
-            "payload": { "nodeId": "node-456", "requirements": "Use environment variables for database connection string." }
           }
         ]
       }

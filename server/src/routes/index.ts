@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { generateCodeAndZip } from '../controllers/generationController';
+import { generateCodeAndZip, getSuggestions } from '../controllers/generationController';
 
 const router = Router();
 
 router.post('/generate', generateCodeAndZip);
+router.post('/suggest', getSuggestions);
 
 export default router;

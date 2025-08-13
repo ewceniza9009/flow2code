@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { saveAs } from 'file-saver';
-import { Project } from '@/types/project';
+import { Project, CodeGenerationType } from '@/types/project';
 import { useStore } from '@/store/useStore';
 
-const prepareProjectForApi = (project: Project) => {
+const prepareProjectForApi = (project: Project, codeGenerationType?: CodeGenerationType) => {
     const latestSnapshot = project.snapshots[project.snapshots.length - 1];
     const nodes = latestSnapshot.nodes.map(node => ({
         id: node.id,
@@ -12,20 +12,33 @@ const prepareProjectForApi = (project: Project) => {
         role: node.data.category,
         techStack: node.data.techStack,
         requirements: node.data.requirements,
-        config: node.data.config, // Include the new config field
+        config: node.data.config,
     }));
     const edges = latestSnapshot.edges.map(edge => ({
         source: edge.source,
         target: edge.target,
         type: edge.label || "API Call",
-        data: edge.data, // Include all edge data
+        data: edge.data,
     }));
-    return { name: project.name, type: project.type, nodes, edges };
+    
+    const payload: any = { 
+        name: project.name, 
+        type: project.type, 
+        nodes, 
+        edges,
+        settings: project.settings 
+    };
+
+    if (codeGenerationType) {
+        payload.codeGenerationType = codeGenerationType;
+    }
+
+    return payload;
 };
 
-export const generateCode = async (project: Project): Promise<void> => {
+export const generateCode = async (project: Project, codeGenerationType: CodeGenerationType): Promise<void> => {
     try {
-        const projectData = prepareProjectForApi(project);
+        const projectData = prepareProjectForApi(project, codeGenerationType);
         const response = await axios.post('/api/generate', { project: projectData }, {
             responseType: 'blob',
         });
