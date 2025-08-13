@@ -1,4 +1,4 @@
-import { NODE_DEFINITIONS, NodeCategory, NodeDefinition } from '@/lib/nodes';
+import { NODE_DEFINITIONS, NodeCategory, NodeDefinition } from '@flow2code/shared';
 import { useState } from 'react';
 
 export default function NodeLibrary() {

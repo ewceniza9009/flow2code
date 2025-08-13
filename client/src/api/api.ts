@@ -6,9 +6,8 @@ import { useStore } from '@/store/useStore';
 const prepareProjectForApi = (project: Project, codeGenerationType?: CodeGenerationType) => {
     const latestSnapshot = project.snapshots[project.snapshots.length - 1];
 
-    // Filter out any nodes that are just for annotation/visual context clarity.
     const functionalNodes = latestSnapshot.nodes.filter(node => node.data.category !== 'Annotations');
-
+    
     const nodes = functionalNodes.map(node => ({
         id: node.id,
         name: node.data.name,
@@ -60,7 +59,7 @@ export const checkAndSuggest = async (project: Project): Promise<any> => {
         const projectData = prepareProjectForApi(project);
         const response = await axios.post('/api/suggest', { project: projectData });
         useStore.getState().setSuggestions(response.data.suggestions);
-        alert('Suggestions generated successfully!');
+        // --- MODIFICATION: Removed the alert ---
         return response.data;
     } catch (error) {
         console.error('Error fetching suggestions:', error);

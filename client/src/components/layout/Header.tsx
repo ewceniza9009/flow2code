@@ -1,4 +1,4 @@
-import { ArrowLeft, Files, Play, Trash2, PanelLeft, PanelRight, Sun, Moon, Sparkles, ChevronDown, Search, Pencil, Settings } from 'lucide-react';
+import { ArrowLeft, Files, Play, Trash2, PanelLeft, PanelRight, Sun, Moon, Sparkles, ChevronDown, Search, Pencil, Settings, Lightbulb } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
@@ -27,11 +27,13 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
     loadProjects,
     isDarkMode,
     toggleDarkMode,
+    isSuggestionsPanelOpen,
     setIsSuggestionsPanelOpen,
     renameProject,
     openSettingsModal,
     codeGenerationType,
     setCodeGenerationType,
+    suggestions,
   } = useStore();
 
   const projects = useLiveQuery(() => db.projects.toArray());
@@ -91,12 +93,12 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
       setNodes(latestSnapshot.nodes);
       setEdges(latestSnapshot.edges);
     }
-    setIsProjectsListOpen(false); // Collapse after selection
+    setIsProjectsListOpen(false);
   };
 
   const handleRenameClick = () => {
     setIsRenamingActive(true);
-    setIsActionsMenuOpen(false); // Close actions menu
+    setIsActionsMenuOpen(false);
   };
 
   const handleRenameBlur = () => {
@@ -108,7 +110,7 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
 
   const handleRenameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      e.currentTarget.blur(); // Trigger blur to save
+      e.currentTarget.blur();
     }
   };
 
@@ -131,12 +133,12 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
         openNewProjectModal();
       }
     }
-    setIsActionsMenuOpen(false); // Close menu after action
+    setIsActionsMenuOpen(false);
   };
 
   const handleNewProjectClick = () => {
     openNewProjectModal();
-    setIsActionsMenuOpen(false); // Close menu after action
+    setIsActionsMenuOpen(false);
   };
 
   const handleGenerate = async () => {
@@ -150,25 +152,22 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
     }
   };
   
-  // --- MODIFICATION START ---
   const handleAICheck = async () => {
     if (!activeProject) return;
     setIsChecking(true);
     try {
-      setIsSuggestionsPanelOpen(true);
       await checkAndSuggest(activeProject);
+      setIsSuggestionsPanelOpen(true); // Open panel automatically after check
     } finally {
       setIsChecking(false);
     }
   };
-  // --- MODIFICATION END ---
 
   const filteredProjects = projects?.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())) || [];
 
   return (
     <header className="h-12 bg-surface dark:bg-dark-surface border-b border-border dark:border-dark-border flex items-center justify-between px-3 shrink-0">
       
-      {/* Left-aligned: Project/Flow Navigation */}
       <div className="flex items-center gap-4">
         <img src='/flow2code.svg' alt='Flow2Code Logo' className='w-6 h-6' />
         
@@ -278,9 +277,7 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
         )}
       </div>
 
-      {/* Center-aligned: Primary Actions */}
       <div className='flex items-center gap-2'>
-        {/* --- MODIFICATION START --- */}
         <button
           onClick={handleAICheck}
           disabled={!activeProject || isGenerating || isChecking}
@@ -289,7 +286,6 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
           <Sparkles size={16} className={isChecking ? 'animate-pulse' : ''}/>
           {isChecking ? 'Checking...' : 'AI Check'}
         </button>
-        {/* --- MODIFICATION END --- */}
 
         <div className="relative flex" ref={generateMenuRef}>
           <button
@@ -344,8 +340,21 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
         </div>
       </div>
 
-      {/* Right-aligned: Utility Controls */}
       <div className="flex items-center gap-2">
+        {/* --- MODIFICATION START --- */}
+        {suggestions.length > 0 && (
+          <button 
+            onClick={() => setIsSuggestionsPanelOpen(!isSuggestionsPanelOpen)} 
+            className="p-1 rounded-md hover:bg-border dark:hover:bg-dark-border transition-colors relative"
+            title="Toggle AI Suggestions"
+          >
+            <Lightbulb size={18} className="text-yellow-400" />
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+              {suggestions.length}
+            </span>
+          </button>
+        )}
+        {/* --- MODIFICATION END --- */}
         <button onClick={toggleLeftPanel} className="p-1 rounded-md hover:bg-border dark:hover:bg-dark-border transition-colors"><PanelLeft size={18} /></button>
         <button onClick={toggleRightPanel} className="p-1 rounded-md hover:bg-border dark:hover:bg-dark-border transition-colors"><PanelRight size={18} /></button>
         <button onClick={toggleDarkMode} className="p-1 rounded-md hover:bg-border dark:hover:bg-dark-border transition-colors">

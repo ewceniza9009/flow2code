@@ -5,16 +5,19 @@ export default function SuggestionsPanel() {
   const { 
     suggestions, 
     isSuggestionsPanelOpen, 
-    setIsSuggestionsPanelOpen 
+    setIsSuggestionsPanelOpen,
+    applySuggestionAction,
+    removeSuggestion,
   } = useStore();
 
   if (!isSuggestionsPanelOpen) {
     return null;
   }
 
-  const handleApplyAction = (action: any) => {
-    alert(`Action "${action.label}" clicked. Apply logic needs to be implemented.`);
-    console.log("Apply action payload:", action.payload);
+  const handleApplyAction = (suggestionId: string, action: any) => {
+    applySuggestionAction(action);
+    // For simplicity, we remove the whole suggestion card after one action is applied.
+    removeSuggestion(suggestionId); 
   };
 
   return (
@@ -42,7 +45,7 @@ export default function SuggestionsPanel() {
                 {suggestion.actions.map((action, index) => (
                   <button
                     key={index}
-                    onClick={() => handleApplyAction(action)}
+                    onClick={() => handleApplyAction(suggestion.id, action)}
                     className="flex items-center gap-1.5 px-2 py-1 text-xs bg-primary/20 text-primary rounded-md hover:bg-primary/30 transition-colors"
                   >
                     <Zap size={14} />

@@ -8,6 +8,7 @@
     "dev": "ts-node-dev -r dotenv/config --respawn --transpile-only src/server.ts"
   },
   "dependencies": {
+    "@flow2code/shared": "workspace:*",
     "@google/generative-ai": "^0.11.3",
     "archiver": "^7.0.1",
     "cors": "^2.8.5",

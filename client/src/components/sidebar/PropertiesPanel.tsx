@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react';
 import { ANIMATED_ICONS } from "@/lib/constants";
 import React from "react";
 import { Node, Edge } from "reactflow";
-import { NODE_DEFINITIONS } from "@/lib/nodes";
+import { NODE_DEFINITIONS } from "@flow2code/shared";
 
 const ConfigPanel = ({ node, updateNodeData }: { node: Node<NodeData>; updateNodeData: (id: string, data: any) => void }) => {
   const [config, setConfig] = useState(JSON.stringify(node.data?.config, null, 2));

@@ -1,4 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+// --- MODIFICATION: Changed the import path ---
+import { NODE_DEFINITIONS } from '@flow2code/shared';
 
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
@@ -7,6 +9,7 @@ if (!apiKey) {
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
+// ... the rest of the file remains the same ...
 
 function extractJsonFromString(text: string): any {
     const firstBracket = text.indexOf('{');
@@ -106,7 +109,7 @@ function getGenerationTypeInstructions(type: string): string {
         - Any code that is not explicitly required to make a test pass.
       `;
         default:
-            return getGenerationTypeInstructions('Flexible'); // Default to Flexible if type is unknown.
+            return getGenerationTypeInstructions('Flexible');
     }
 }
 
@@ -180,6 +183,8 @@ function buildPrompt(project: any): string {
 }
 
 function buildSuggestionPrompt(project: any): string {
+    const validNodeTypes = NODE_DEFINITIONS.flatMap(category => category.nodes.map(node => node.type));
+
     const architecturalData = {
         name: project.name,
         type: project.type,
@@ -208,10 +213,11 @@ function buildSuggestionPrompt(project: any): string {
     ${systemDesign}
     \`\`\`
 
-    **Instructions:**
+    **Instructions & Constraints:**
     1.  **Analyze the Design:** Review the nodes, edges, and settings to identify potential issues related to best practices, security, scalability, and maintainability.
     2.  **Generate Suggestions:** Provide concrete suggestions to address any identified issues.
-    3.  **Strict Output Format:** Your response MUST be ONLY a single, valid JSON array of objects.
+    3.  **Use Valid Node Types:** If you suggest adding a new node (action: 'add'), the \`type\` in the payload **MUST** be one of the following values: ${JSON.stringify(validNodeTypes)}. Do not invent a new type.
+    4.  **Strict Output Format:** Your response MUST be ONLY a single, valid JSON array of objects.
         -   ABSOLUTELY NO commentary, explanations, or conversational text before or after the JSON array.
         -   Your entire response must be parsable by \`JSON.parse()\`.
         -   Each object in the array must conform to this exact structure:
@@ -227,7 +233,7 @@ function buildSuggestionPrompt(project: any): string {
         "id": "sugg-sec-1",
         "type": "architectural",
         "title": "Add an Authentication Service",
-        "description": "The current design lacks a dedicated authentication service, which is critical for securing APIs. Adding an auth service (e.g., using JWT) will centralize user management and protect your endpoints.",
+        "description": "The current design lacks a dedicated authentication service... etc.",
         "actions": [
           {
             "label": "Add Auth Service Node",
@@ -245,13 +251,13 @@ function buildSuggestionPrompt(project: any): string {
 
 export const generateCodeFromDiagram = async (project: any): Promise<Record<string, string>> => {
     const prompt = buildPrompt(project);
-    console.log("--- PROMPT SENT TO AI (Code Generation) ---\n", prompt, "\n------------------------------------"); // ADDED FOR DEBUGGING
+    console.log("--- PROMPT SENT TO AI (Code Generation) ---\n", prompt, "\n------------------------------------");
     
     try {
         const result = await model.generateContent(prompt);
         const response = result.response;
         const text = response.text();
-        console.log("--- RAW AI RESPONSE (Code Generation) ---\n", text, "\n------------------------------------"); // ADDED FOR DEBUGGING
+        console.log("--- RAW AI RESPONSE (Code Generation) ---\n", text, "\n------------------------------------");
         return extractJsonFromString(text);
     } catch (error) {
         console.error("Error calling Generative AI API for code generation:", error);
@@ -261,17 +267,17 @@ export const generateCodeFromDiagram = async (project: any): Promise<Record<stri
 
 export const generateSuggestionsFromDiagram = async (project: any): Promise<any[]> => {
     const prompt = buildSuggestionPrompt(project);
-    console.log("--- PROMPT SENT TO AI (Suggestions) ---\n", prompt, "\n------------------------------------"); // ADDED FOR DEBUGGING
+    console.log("--- PROMPT SENT TO AI (Suggestions) ---\n", prompt, "\n------------------------------------");
     
     try {
         const result = await model.generateContent(prompt);
         const response = result.response;
         const text = response.text();
-        console.log("--- RAW AI RESPONSE (Suggestions) ---\n", text, "\n------------------------------------"); // ADDED FOR DEBUGGING
+        console.log("--- RAW AI RESPONSE (Suggestions) ---\n", text, "\n------------------------------------");
         return extractJsonFromString(text);
     } catch (error) {
         console.error("Error calling Generative AI API for suggestions:", error);
-        console.error("Full error object:", error); // ADDED FOR DEBUGGING
+        console.error("Full error object:", error);
         throw new Error("Failed to generate suggestions from AI service.");
     }
 };

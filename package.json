@@ -3,10 +3,12 @@
   "private": true,
   "scripts": {
     "dev": "pnpm -r --parallel dev",
-    "build": "pnpm --filter client build",
+    "build": "pnpm --filter @flow2code/shared build && pnpm --filter client build",
     "start:server": "pnpm --filter server start"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
+    "rimraf": "^5.0.7",
     "typescript": "^5.4.5"
   },
   "packageManager": "pnpm@9.1.0"

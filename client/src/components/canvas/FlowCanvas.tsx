@@ -13,7 +13,7 @@ import { useStore, NodeData } from '@/store/useStore';
 import { useCallback, useMemo, useRef } from 'react';
 import CustomNode from './CustomNode';
 import { v4 as uuidv4 } from 'uuid';
-import { NODE_DEFINITIONS } from '@/lib/nodes';
+import { NODE_DEFINITIONS } from "@flow2code/shared";
 import { GroupNode } from './GroupNode';
 import ContextMenu from './ContextMenu';
 import CustomEdge from './CustomEdge';
