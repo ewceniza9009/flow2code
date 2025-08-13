@@ -1,13 +1,12 @@
 "use strict";
+// packages/shared/src/nodes.ts
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NODE_DEFINITIONS = void 0;
 exports.NODE_DEFINITIONS = [
     {
         name: "Frontend",
         nodes: [
-            { type: 'frontend-vanilla', name: 'Vanilla', category: 'Frontend', techStack: ['HTML', 'Javascript', 'CSS(Tailwind CSS + Bootstrap)'] },
-            { type: 'frontend-aspcore', name: 'Razor', category: 'Frontend', techStack: ['Razor + HTML', 'Javascript', 'CSS(Tailwind CSS + Bootstrap)'] },
-            { type: 'frontend-thirdparty', name: 'ThirdParty', category: 'Frontend', techStack: ['Telerik', 'Devexpress', 'Syncfusion)'] },
+            { type: 'frontend-vanilla', name: 'Vanilla', category: 'Frontend', techStack: ['HTML', 'Javascript', 'CSS'] },
             { type: 'frontend-react', name: 'React', category: 'Frontend', techStack: ['React', 'Vite', 'TypeScript'] },
             { type: 'frontend-nextjs', name: 'Next.js', category: 'Frontend', techStack: ['Next.js', 'React'] },
             { type: 'frontend-vue', name: 'Vue.js', category: 'Frontend', techStack: ['Vue', 'Vite'] },
@@ -27,13 +26,6 @@ exports.NODE_DEFINITIONS = [
         ],
     },
     {
-        name: "Gateways",
-        nodes: [
-            { type: 'gateway-kong', name: 'Kong Gateway', category: 'Gateways', techStack: ['API Gateway', 'Lua'] },
-            { type: 'gateway-azure-apim', name: 'Azure API Mgt', category: 'Gateways', techStack: ['API Gateway', 'Azure'] },
-        ]
-    },
-    {
         name: "Data Layer",
         nodes: [
             { type: 'db-postgres', name: 'PostgreSQL', category: 'Data Layer', techStack: ['SQL', 'PostgreSQL'], config: { databaseName: 'db', username: 'user', password: 'password' } },
@@ -43,6 +35,29 @@ exports.NODE_DEFINITIONS = [
             { type: 'db-redis', name: 'Redis', category: 'Data Layer', techStack: ['Cache', 'Redis'] },
             { type: 'db-indexdb', name: 'IndexDB', category: 'Data Layer', techStack: ['DexieJS', 'IndexDb'] },
         ],
+    },
+    {
+        name: "Logic & Flow",
+        nodes: [
+            { type: 'flowchart', name: 'Start / End', category: 'Logic & Flow', techStack: ['Flow'], data: { shape: 'terminator', text: 'Start' } },
+            { type: 'flowchart', name: 'Process', category: 'Logic & Flow', techStack: ['Flow'], data: { shape: 'rectangle', text: 'Do something' } },
+            { type: 'flowchart', name: 'Decision', category: 'Logic & Flow', techStack: ['Flow'], data: { shape: 'diamond', text: 'Is it valid?' } },
+            { type: 'flowchart', name: 'Input / Output', category: 'Logic & Flow', techStack: ['Flow'], data: { shape: 'parallelogram', text: 'Get Data' } },
+            { type: 'flowchart', name: 'Subroutine', category: 'Logic & Flow', techStack: ['Flow'], data: { shape: 'subroutine', text: 'Call function' } },
+            { type: 'flowchart', name: 'Document', category: 'Logic & Flow', techStack: ['Flow'], data: { shape: 'document', text: 'Generate Report' } },
+            { type: 'flowchart', name: 'Data Storage', category: 'Logic & Flow', techStack: ['Flow'], data: { shape: 'dataStorage', text: 'Save State' } },
+            { type: 'flowchart', name: 'Delay', category: 'Logic & Flow', techStack: ['Flow'], data: { shape: 'delay', text: 'Wait 1 second' } },
+            { type: 'flowchart', name: 'Display', category: 'Logic & Flow', techStack: ['Flow'], data: { shape: 'display', text: 'Show message' } },
+            { type: 'flowchart', name: 'Merge', category: 'Logic & Flow', techStack: ['Flow'], data: { shape: 'merge', text: 'Merge branches' } },
+            { type: 'flowchart', name: 'Connector', category: 'Logic & Flow', techStack: ['Flow'], data: { shape: 'connector', text: 'A' } },
+        ],
+    },
+    {
+        name: "Gateways",
+        nodes: [
+            { type: 'gateway-kong', name: 'Kong Gateway', category: 'Gateways', techStack: ['API Gateway', 'Lua'] },
+            { type: 'gateway-azure-apim', name: 'Azure API Mgt', category: 'Gateways', techStack: ['API Gateway', 'Azure'] },
+        ]
     },
     {
         name: "Messaging",

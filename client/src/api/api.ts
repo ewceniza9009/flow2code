@@ -2,68 +2,94 @@ import axios from 'axios';
 import { saveAs } from 'file-saver';
 import { Project, CodeGenerationType } from '@/types/project';
 import { useStore } from '@/store/useStore';
+import { Node, Edge } from 'reactflow';
+import { NodeData } from '@/store/useStore';
+
+const processNodesRecursive = (nodes: Node<NodeData>[]) => {
+  const processedNodes: any[] = [];
+  nodes.forEach(node => {
+    if (node.data.category === 'Annotations') return;
+
+    const processedNode: any = {
+      id: node.id,
+      name: node.data.name,
+      type: node.data.type,
+      role: node.data.category,
+      techStack: node.data.techStack,
+      requirements: node.data.requirements,
+      config: node.data.config,
+    };
+
+    if (node.data.subflow && (node.data.subflow.nodes.length > 0 || node.data.subflow.edges.length > 0)) {
+      processedNode.subflow = {
+        nodes: processNodesRecursive(node.data.subflow.nodes),
+        edges: node.data.subflow.edges.map(edge => ({
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          type: edge.label || "API Call",
+          data: edge.data,
+        }))
+      };
+    }
+    processedNodes.push(processedNode);
+  });
+  return processedNodes;
+};
+
 
 const prepareProjectForApi = (project: Project, codeGenerationType?: CodeGenerationType) => {
-    const latestSnapshot = project.snapshots[project.snapshots.length - 1];
+    const latestSnapshot = project.snapshots[project.snapshots.length - 1];
+    
+    const nodes = processNodesRecursive(latestSnapshot.nodes);
+    
+    const edges = latestSnapshot.edges.map(edge => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        type: edge.label || "API Call",
+        data: edge.data,
+    }));
+    
+    const payload: any = { 
+        name: project.name, 
+        type: project.type, 
+        nodes, 
+        edges,
+        settings: project.settings 
+    };
 
-    const functionalNodes = latestSnapshot.nodes.filter(node => node.data.category !== 'Annotations');
-    
-    const nodes = functionalNodes.map(node => ({
-        id: node.id,
-        name: node.data.name,
-        type: node.data.type,
-        role: node.data.category,
-        techStack: node.data.techStack,
-        requirements: node.data.requirements,
-        config: node.data.config,
-    }));
-    const edges = latestSnapshot.edges.map(edge => ({
-        source: edge.source,
-        target: edge.target,
-        type: edge.label || "API Call",
-        data: edge.data,
-    }));
-    
-    const payload: any = { 
-        name: project.name, 
-        type: project.type, 
-        nodes, 
-        edges,
-        settings: project.settings 
-    };
+    if (codeGenerationType) {
+        payload.codeGenerationType = codeGenerationType;
+    }
 
-    if (codeGenerationType) {
-        payload.codeGenerationType = codeGenerationType;
-    }
-
-    return payload;
+    return payload;
 };
 
 export const generateCode = async (project: Project, codeGenerationType: CodeGenerationType): Promise<void> => {
-    try {
-        const projectData = prepareProjectForApi(project, codeGenerationType);
-        const response = await axios.post('/api/generate', { project: projectData }, {
-            responseType: 'blob',
-        });
-        const blob = new Blob([response.data], { type: 'application/zip' });
-        saveAs(blob, `${project.name.replace(/\s+/g, '_')}.zip`);
-        alert('Project generated successfully!');
-    } catch (error) {
-        console.error('Error generating code:', error);
-        alert('An error occurred during code generation.');
-    }
+    try {
+        const projectData = prepareProjectForApi(project, codeGenerationType);
+        const response = await axios.post('/api/generate', { project: projectData }, {
+            responseType: 'blob',
+        });
+        const blob = new Blob([response.data], { type: 'application/zip' });
+        saveAs(blob, `${project.name.replace(/\s+/g, '_')}.zip`);
+        alert('Project generated successfully!');
+    } catch (error) {
+        console.error('Error generating code:', error);
+        alert('An error occurred during code generation.');
+    }
 };
 
 export const checkAndSuggest = async (project: Project): Promise<any> => {
-    try {
-        const projectData = prepareProjectForApi(project);
-        const response = await axios.post('/api/suggest', { project: projectData });
-        useStore.getState().setSuggestions(response.data.suggestions);
-        // --- MODIFICATION: Removed the alert ---
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching suggestions:', error);
-        alert('An error occurred during suggestions generation.');
-        return null;
-    }
+    try {
+        const projectData = prepareProjectForApi(project);
+        const response = await axios.post('/api/suggest', { project: projectData });
+        useStore.getState().setSuggestions(response.data.suggestions);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching suggestions:', error);
+        alert('An error occurred during suggestions generation.');
+        return null;
+    }
 }

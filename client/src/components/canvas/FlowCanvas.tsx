@@ -1,12 +1,12 @@
 import ReactFlow, {
-  Controls,
-  Background,
-  MiniMap,
-  Node,
-  IsValidConnection,
-  Connection,
-  Edge,
-  useReactFlow,
+  Controls,
+  Background,
+  MiniMap,
+  Node,
+  IsValidConnection,
+  Connection,
+  Edge,
+  useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useStore, NodeData } from '@/store/useStore';
@@ -20,178 +20,172 @@ import CustomEdge from './CustomEdge';
 import TextNode from './TextNode';
 import ShapeNode from './ShapeNode';
 import IconNode from './IconNode';
+import FlowchartNode from './FlowchartNode';
 
 const nodeTypes = {
-  custom: CustomNode,
-  group: GroupNode,
-  'text-note': TextNode,
-  shape: ShapeNode,
-  icon: IconNode,
+  custom: CustomNode,
+  group: GroupNode,
+  'text-note': TextNode,
+  shape: ShapeNode,
+  icon: IconNode,
+  flowchart: FlowchartNode,
 };
 
 const edgeTypes = {
-  custom: CustomEdge,
+  custom: CustomEdge,
 };
 
 export default function FlowCanvas() {
-  const {
-    nodes: mainNodes,
-    edges: mainEdges,
-    currentFlowId,
-    onNodesChange,
-    onEdgesChange,
-    onConnect,
-    setNodes,
-    activeProject,
-    setSelectedNode,
-    setSelectedEdge,
-    openContextMenu,
-    closeContextMenu,
-    enterSubflow,
-  } = useStore();
+  const {
+    nodes: mainNodes,
+    edges: mainEdges,
+    currentFlowId,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+    setNodes,
+    activeProject,
+    setSelectedNode,
+    setSelectedEdge,
+    openContextMenu,
+    closeContextMenu,
+    enterSubflow,
+  } = useStore();
 
-  const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const reactFlowInstance = useReactFlow();
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const reactFlowInstance = useReactFlow();
 
-  const displayedFlow = useMemo(() => {
-    if (currentFlowId === null) {
-      return { nodes: mainNodes, edges: mainEdges };
-    }
-    const parentNode = mainNodes.find(n => n.id === currentFlowId);
-    return parentNode?.data.subflow || { nodes: [], edges: [] };
-  }, [currentFlowId, mainNodes, mainEdges]);
+  const displayedFlow = useMemo(() => {
+    if (currentFlowId === null) {
+      return { nodes: mainNodes, edges: mainEdges };
+    }
+    const parentNode = mainNodes.find(n => n.id === currentFlowId);
+    return parentNode?.data.subflow || { nodes: [], edges: [] };
+  }, [currentFlowId, mainNodes, mainEdges]);
 
-  const onDrop = useCallback(
-    (event: React.DragEvent) => {
-      event.preventDefault();
-      closeContextMenu();
-      
-      const type = event.dataTransfer.getData('application/reactflow');
-      const name = event.dataTransfer.getData('application/reactflow-nodename');
-      if (!type || !name) return;
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      closeContextMenu();
+      
+      const type = event.dataTransfer.getData('application/reactflow');
+      const name = event.dataTransfer.getData('application/reactflow-nodename');
+      if (!type || !name) return;
 
-      const nodeDefinition = NODE_DEFINITIONS.flatMap(c => c.nodes).find(n => n.name === name);
-      if (!nodeDefinition) return;
+      const nodeDefinition = NODE_DEFINITIONS.flatMap(c => c.nodes).find(n => n.name === name);
+      if (!nodeDefinition) return;
 
-      const position = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
-      
-      const isAnnotation = nodeDefinition.category === 'Annotations';
-      const isGroup = nodeDefinition.type === 'group';
-      
-      const initialData: NodeData = { ...nodeDefinition, ...nodeDefinition.data };
+      const position = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      
+      const isAnnotation = nodeDefinition.category === 'Annotations';
+      const isGroup = nodeDefinition.type === 'group';
+      const isFlowchart = nodeDefinition.category === 'Logic & Flow';
+      
+      const initialData: NodeData = { ...nodeDefinition, ...nodeDefinition.data };
 
-      if (nodeDefinition.type === 'text-note') {
-        initialData.text = 'Editable Note';
-      } else if (!isAnnotation && !isGroup) {
-        initialData.requirements = `A standard ${nodeDefinition.name}.`;
-      }
-        
-      let initialStyle = isGroup
-        ? { width: 500, height: 400 }
-        : isAnnotation
-          ? { width: 150, height: 100 }
-          : { width: 256, height: 160 };
+      if (nodeDefinition.type === 'text-note') {
+        initialData.text = 'Editable Note';
+      } else if (!isAnnotation && !isGroup && !isFlowchart) {
+        initialData.requirements = `A standard ${nodeDefinition.name}.`;
+      }
+        
+      let initialStyle = {};
+      if (isGroup) {
+        initialStyle = { width: 500, height: 400 };
+      } else if (isFlowchart) {
+        initialStyle = { width: 200, height: 120 };
+      } else if (isAnnotation) {
+        initialStyle = nodeDefinition.type === 'icon' ? { width: 80, height: 80 } : { width: 150, height: 100 };
+      } else {
+        initialStyle = { width: 256, height: 160 };
+      }
+      
+      const newNode: Node<NodeData> = {
+        id: uuidv4(),
+        type: nodeDefinition.type,
+        position,
+        data: initialData,
+        style: initialStyle,
+      };
 
-      if (nodeDefinition.type === 'icon') {
-        initialStyle = { width: 80, height: 80 };
-      }
-      
-      // Determine the correct type for React Flow. All technology nodes should use the 'custom' type.
-      let nodeTypeForReactFlow: string;
-      if (isGroup) {
-        nodeTypeForReactFlow = 'group';
-      } else if (isAnnotation) {
-        nodeTypeForReactFlow = nodeDefinition.type; // e.g., 'shape', 'icon', 'text-note'
-      } else {
-        nodeTypeForReactFlow = 'custom'; // All other nodes (Frontend, Backend, etc.) use the 'custom' renderer.
-      }      
-      
-      const newNode: Node<NodeData> = {
-        id: uuidv4(),
-        type: nodeTypeForReactFlow, //Corrected node type
-        position,
-        data: initialData,
-        style: initialStyle,
-      };
+      const nextNodes = [...displayedFlow.nodes, newNode];
+      setNodes(nextNodes);
+    },
+    [closeContextMenu, displayedFlow.nodes, setNodes, reactFlowInstance]
+  );
+  
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
 
-      const nextNodes = [...displayedFlow.nodes, newNode];
-      setNodes(nextNodes);
-    },
-    [closeContextMenu, displayedFlow.nodes, setNodes, reactFlowInstance]
-  );
-  
-  const onDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }, []);
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      event.preventDefault();
+      if (!reactFlowWrapper.current) return;
 
-  const onNodeContextMenu = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      event.preventDefault();
-      if (!reactFlowWrapper.current) return;
+      const pane = reactFlowWrapper.current.getBoundingClientRect();
+      setSelectedNode(node);
+      openContextMenu({
+        id: node.id,
+        top: event.clientY - pane.top,
+        left: event.clientX - pane.left,
+      });
+    },
+    [openContextMenu, setSelectedNode]
+  );
 
-      const pane = reactFlowWrapper.current.getBoundingClientRect();
-      setSelectedNode(node);
-      openContextMenu({
-        id: node.id,
-        top: event.clientY - pane.top,
-        left: event.clientX - pane.left,
-      });
-    },
-    [openContextMenu, setSelectedNode]
-  );
+  const onNodeDoubleClick = (_: React.MouseEvent, node: Node) => {
+    if (node.data.category !== 'Annotations' && node.data.category !== 'Logic & Flow' && node.type !== 'group') {
+      enterSubflow(node.id);
+    }
+  };
+  
+  const isValidConnection: IsValidConnection = useCallback(
+    (connection: Connection | Edge) => {
+      const allNodes = displayedFlow.nodes;
+      const sourceNode = allNodes.find(n => n.id === connection.source);
+      const targetNode = allNodes.find(n => n.id === connection.target);
+      
+      if (sourceNode?.data.category === 'Annotations' || targetNode?.data.category === 'Annotations') {
+        return false;
+      }
 
-  const onNodeDoubleClick = (_: React.MouseEvent, node: Node) => {
-    if (node.data.category !== 'Annotations' && node.type !== 'group') {
-      enterSubflow(node.id);
-    }
-  };
-  
-  const isValidConnection: IsValidConnection = useCallback(
-    (connection: Connection | Edge) => {
-      const allNodes = displayedFlow.nodes;
-      const sourceNode = allNodes.find(n => n.id === connection.source);
-      const targetNode = allNodes.find(n => n.id === connection.target);
-      
-      if (sourceNode?.data.category === 'Annotations' || targetNode?.data.category === 'Annotations') {
-        return false;
-      }
+      if (!connection.source || !connection.target || connection.source === connection.target) {
+        return false;
+      }
+      
+      return true;
+    },
+    [displayedFlow.nodes]
+  );
 
-      if (!connection.source || !connection.target || connection.source === connection.target || connection.sourceHandle === connection.targetHandle) {
-        return false;
-      }
-      
-      return true;
-    },
-    [displayedFlow.nodes]
-  );
+  if (!activeProject) {
+    return <div className="flex items-center justify-center h-full text-text-muted">Create a new project to begin.</div>;
+  }
 
-  if (!activeProject) {
-    return <div className="flex items-center justify-center h-full text-text-muted">Create a new project to begin.</div>;
-  }
-
-  return (
-    <div ref={reactFlowWrapper} className="h-full w-full relative" onClick={closeContextMenu} onDrop={onDrop} onDragOver={onDragOver}>
-      <ReactFlow
-        nodes={displayedFlow.nodes}
-        edges={displayedFlow.edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        onNodeClick={(_, node) => setSelectedNode(node)}
-        onEdgeClick={(_, edge) => setSelectedEdge(edge)}
-        onNodeDoubleClick={onNodeDoubleClick}
-        onNodeContextMenu={onNodeContextMenu}
-        fitView
-        isValidConnection={isValidConnection}
-      >
-        <Controls />
-        <MiniMap />
-        <Background gap={12} size={1} />
-      </ReactFlow>
-      <ContextMenu />
-    </div>
-  );
+  return (
+    <div ref={reactFlowWrapper} className="h-full w-full relative" onClick={closeContextMenu} onDrop={onDrop} onDragOver={onDragOver}>
+      <ReactFlow
+        nodes={displayedFlow.nodes}
+        edges={displayedFlow.edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        onNodeClick={(_, node) => setSelectedNode(node)}
+        onEdgeClick={(_, edge) => setSelectedEdge(edge)}
+        onNodeDoubleClick={onNodeDoubleClick}
+        onNodeContextMenu={onNodeContextMenu}
+        fitView
+        isValidConnection={isValidConnection}
+      >
+        <Controls />
+        <MiniMap />
+        <Background gap={12} size={1} />
+      </ReactFlow>
+      <ContextMenu />
+    </div>
+  );
 }
