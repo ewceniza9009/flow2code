@@ -67,20 +67,26 @@ export default function FlowCanvas() {
     (event: React.DragEvent) => {
       event.preventDefault();
       closeContextMenu();
-      
-      const type = event.dataTransfer.getData('application/reactflow');
+     
+      // Correctly get the node name from the data transfer
       const name = event.dataTransfer.getData('application/reactflow-nodename');
-      if (!type || !name) return;
+      if (!name) return;
 
       const nodeDefinition = NODE_DEFINITIONS.flatMap(c => c.nodes).find(n => n.name === name);
       if (!nodeDefinition) return;
 
       const position = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
-      
+     
+      // This is the crucial part: determine the correct React Flow type
+      let reactFlowType = 'custom';
+      if (nodeDefinition.type === 'text-note' || nodeDefinition.type === 'shape' || nodeDefinition.type === 'icon' || nodeDefinition.type === 'flowchart' || nodeDefinition.type === 'group') {
+        reactFlowType = nodeDefinition.type;
+      }
+
       const isAnnotation = nodeDefinition.category === 'Annotations';
       const isGroup = nodeDefinition.type === 'group';
       const isFlowchart = nodeDefinition.category === 'Logic & Flow';
-      
+     
       const initialData: NodeData = { ...nodeDefinition, ...nodeDefinition.data };
 
       if (nodeDefinition.type === 'text-note') {
@@ -88,7 +94,7 @@ export default function FlowCanvas() {
       } else if (!isAnnotation && !isGroup && !isFlowchart) {
         initialData.requirements = `A standard ${nodeDefinition.name}.`;
       }
-        
+      
       let initialStyle = {};
       if (isGroup) {
         initialStyle = { width: 500, height: 400 };
@@ -99,10 +105,10 @@ export default function FlowCanvas() {
       } else {
         initialStyle = { width: 256, height: 160 };
       }
-      
+     
       const newNode: Node<NodeData> = {
         id: uuidv4(),
-        type: nodeDefinition.type,
+        type: reactFlowType, // Use the determined type here
         position,
         data: initialData,
         style: initialStyle,

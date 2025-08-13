@@ -19,7 +19,7 @@ exports.NODE_DEFINITIONS = [
             { type: 'backend-express', name: 'Express API', category: 'Backend', techStack: ['Node.js', 'Express', 'TypeScript'], config: { port: 3000, middleware: ['cors', 'json'] } },
             { type: 'backend-nestjs', name: 'NestJS API', category: 'Backend', techStack: ['NestJS', 'TypeScript'] },
             { type: 'backend-fastapi', name: 'FastAPI', category: 'Backend', techStack: ['Python', 'FastAPI'] },
-            { type: 'backend-django', name: 'Django', category: 'Backend', techStack: ['Python', 'Django'] },
+            { type: 'backend-django', name: 'Django', category: 'Backend', techStack: ['Django', 'Python'] },
             { type: 'backend-spring', name: 'Spring Boot', category: 'Backend', techStack: ['Java', 'Spring Boot'] },
             { type: 'backend-gofiber', name: 'Go Fiber', category: 'Backend', techStack: ['Go', 'Fiber'] },
             { type: 'backend-aspnet', name: 'ASP.NET Core', category: 'Backend', techStack: ['.NET', 'C#', 'ASP.NET Core'] },
@@ -28,9 +28,9 @@ exports.NODE_DEFINITIONS = [
     {
         name: "Data Layer",
         nodes: [
-            { type: 'db-postgres', name: 'PostgreSQL', category: 'Data Layer', techStack: ['SQL', 'PostgreSQL'], config: { databaseName: 'db', username: 'user', password: 'password' } },
+            { type: 'db-postgres', name: 'PostgreSQL', category: 'Data Layer', techStack: ['PostgreSQL', 'PostgreSQL'], config: { databaseName: 'db', username: 'user', password: 'password' } },
             { type: 'db-sqlserver', name: 'SQL Server', category: 'Data Layer', techStack: ['SQL', 'MS SQL'], config: { databaseName: 'db', username: 'user', password: 'password' } },
-            { type: 'db-mysql', name: 'MySQL', category: 'Data Layer', techStack: ['SQL', 'MySQL'] },
+            { type: 'db-mysql', name: 'MySQL', category: 'Data Layer', techStack: ['MySQL', 'MySQL'] },
             { type: 'db-mongo', name: 'MongoDB', category: 'Data Layer', techStack: ['NoSQL', 'MongoDB'] },
             { type: 'db-redis', name: 'Redis', category: 'Data Layer', techStack: ['Cache', 'Redis'] },
             { type: 'db-indexdb', name: 'IndexDB', category: 'Data Layer', techStack: ['DexieJS', 'IndexDb'] },
