@@ -27,6 +27,13 @@ exports.NODE_DEFINITIONS = [
         ],
     },
     {
+        name: "Gateways",
+        nodes: [
+            { type: 'gateway-kong', name: 'Kong Gateway', category: 'Gateways', techStack: ['API Gateway', 'Lua'] },
+            { type: 'gateway-azure-apim', name: 'Azure API Mgt', category: 'Gateways', techStack: ['API Gateway', 'Azure'] },
+        ]
+    },
+    {
         name: "Data Layer",
         nodes: [
             { type: 'db-postgres', name: 'PostgreSQL', category: 'Data Layer', techStack: ['SQL', 'PostgreSQL'], config: { databaseName: 'db', username: 'user', password: 'password' } },
@@ -48,6 +55,15 @@ exports.NODE_DEFINITIONS = [
         name: "Security",
         nodes: [
             { type: 'sec-auth', name: 'Auth Service', category: 'Security', techStack: ['JWT', 'OAuth2'] },
+            { type: 'sec-identity', name: 'Identity Provider', category: 'Security', techStack: ['OAuth2', 'OIDC', 'SAML'] },
+        ]
+    },
+    {
+        name: "External Services",
+        nodes: [
+            { type: 'ext-ai-ml', name: 'AI/ML Service', category: 'External Services', techStack: ['Computer Vision', 'NLP'] },
+            { type: 'ext-payment', name: 'Payment Gateway', category: 'External Services', techStack: ['Stripe', 'PayPal'] },
+            { type: 'ext-notification', name: 'Notification Service', category: 'External Services', techStack: ['Twilio', 'SendGrid', 'SNS'] },
         ]
     },
     {
