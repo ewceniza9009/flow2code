@@ -5,7 +5,11 @@ import { useStore } from '@/store/useStore';
 
 const prepareProjectForApi = (project: Project, codeGenerationType?: CodeGenerationType) => {
     const latestSnapshot = project.snapshots[project.snapshots.length - 1];
-    const nodes = latestSnapshot.nodes.map(node => ({
+
+    // Filter out any nodes that are just for annotation/visual context clarity.
+    const functionalNodes = latestSnapshot.nodes.filter(node => node.data.category !== 'Annotations');
+
+    const nodes = functionalNodes.map(node => ({
         id: node.id,
         name: node.data.name,
         type: node.data.type,
