@@ -2,11 +2,13 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NODE_DEFINITIONS, NodeCategory, NodeDefinition } from '@flow2code/shared';
 
 const apiKey = process.env.GEMINI_API_KEY;
+const geminiModel = process.env.GEMINI_MODEL;
+
 if (!apiKey) {
     throw new Error("GEMINI_API_KEY is not set in environment variables.");
 }
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ model: geminiModel!.toString() });
 
 function extractJsonFromString(text: string): any {
     const firstBracket = text.indexOf('{');

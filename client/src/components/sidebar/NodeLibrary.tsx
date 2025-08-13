@@ -34,10 +34,6 @@ export default function NodeLibrary() {
 
   return (
     <div className="h-full w-80 bg-surface dark:bg-dark-surface p-4 flex flex-col border-r border-border dark:border-dark-border">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-extrabold text-primary">Node Library</h2>
-      </div>
-
       <div className="relative mb-4">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted dark:text-dark-text-muted" />
         <input

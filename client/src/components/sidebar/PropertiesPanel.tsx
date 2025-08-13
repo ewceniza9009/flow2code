@@ -21,7 +21,6 @@ const ConfigPanel = ({ node, updateNodeData }: { node: Node<NodeData>; updateNod
       updateNodeData(node.id, { config: newConfig });
     } catch (error) {
       console.error('Invalid JSON in config editor:', error);
-      // Optionally, show an error message to the user
     }
   };
 
@@ -118,9 +117,11 @@ export default function PropertiesPanel() {
     const isTransparent = isShapeNode
       ? selectedNode.data?.fillColor === 'transparent'
       : selectedNode.style?.backgroundColor === 'transparent';
-    const opacity = isShapeNode ? selectedNode.data?.opacity ?? 1 : 1; // Default opacity to 1
+    const opacity = isShapeNode ? selectedNode.data?.opacity ?? 1 : 1;
     
-    // Check if the node's type has a config property defined in NODE_DEFINITIONS
+    // This will be true if the node's techStack data includes the string "Flow".
+    const isFlowTechnology = selectedNode.data?.techStack?.includes('Flow');
+
     const nodeDefinition = NODE_DEFINITIONS.flatMap(cat => cat.nodes).find(n => n.type === selectedNode.data?.type);
     const hasConfig = nodeDefinition?.config !== undefined;
 
@@ -177,7 +178,7 @@ export default function PropertiesPanel() {
                       updateNodeStyle(selectedNode.id, { backgroundColor: newValue });
                     }
                   }}
-                  disabled={isTransparent}
+                  disabled={isTransparent || isFlowTechnology}
                   className="w-full h-8 p-0 border-none cursor-pointer bg-transparent disabled:opacity-20"
                 />
               </div>
@@ -204,7 +205,9 @@ export default function PropertiesPanel() {
                       updateNodeStyle(selectedNode.id, { color: newValue });
                     }
                   }}
-                  className="w-full h-8 p-0 border-none cursor-pointer bg-transparent"
+                  // --- 2. Disable the control if technology is "Flow" ---
+                  disabled={isFlowTechnology}
+                  className="w-full h-8 p-0 border-none cursor-pointer bg-transparent disabled:opacity-20"
                 />
               </div>
             </div>
@@ -224,7 +227,8 @@ export default function PropertiesPanel() {
                     updateNodeStyle(selectedNode.id, { backgroundColor: newValue });
                   }
                 }}
-                className="h-3.5 w-3.5 rounded-sm border-border dark:border-dark-border"
+                disabled={isFlowTechnology}
+                className="h-3.5 w-3.5 rounded-sm border-border dark:border-dark-border disabled:opacity-20"
               />
               Transparent Background
             </label>
@@ -248,7 +252,8 @@ export default function PropertiesPanel() {
                     const newValue = parseFloat(e.target.value);
                     updateNodeData(selectedNode.id, { opacity: newValue });
                   }}
-                  className="w-full h-8 cursor-pointer"
+                  disabled={isFlowTechnology}
+                  className="w-full h-8 cursor-pointer disabled:opacity-20"
                 />
                 <span className="text-xs text-text-muted dark:text-dark-text-muted">{(opacity * 100).toFixed(0)}%</span>
               </div>
@@ -286,7 +291,7 @@ export default function PropertiesPanel() {
             </div>
           )}
 
-          {selectedNode.data?.type === 'text-note' && (
+          {/* {selectedNode.data?.type === 'text-note' && (
             <div>
               <label className="block text-xs font-medium text-text-muted dark:text-dark-text-muted mb-1">
                 Note Content
@@ -297,7 +302,7 @@ export default function PropertiesPanel() {
                 className="w-full h-40 bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
               />
             </div>
-          )}
+          )} */}
         </div>
         <div className="mt-4">
           <button
@@ -348,7 +353,6 @@ export default function PropertiesPanel() {
       }
     };
 
-    // New handler for edge color
     const handleEdgeColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (selectedEdge) {
         updateEdgeData(selectedEdge.id, {
@@ -437,7 +441,6 @@ export default function PropertiesPanel() {
             </div>
           )}
           
-          {/* New Dashed Line Checkbox */}
           <div className="mt-2">
             <label
               htmlFor={`dashed-line-${selectedEdge.id}`}
@@ -446,7 +449,7 @@ export default function PropertiesPanel() {
               <input
                 type="checkbox"
                 id={`dashed-line-${selectedEdge.id}`}
-                checked={!!selectedEdge.style?.strokeDasharray} // Check if strokeDasharray exists
+                checked={!!selectedEdge.style?.strokeDasharray}
                 onChange={handleDashedChange}
                 className="h-3.5 w-3.5 rounded-sm border-border dark:border-dark-border"
               />
@@ -454,7 +457,6 @@ export default function PropertiesPanel() {
             </label>
           </div>
 
-          {/* New Edge Color Picker */}
           <div className="mt-2">
             <label
               htmlFor={`edge-color-${selectedEdge.id}`}
@@ -465,7 +467,7 @@ export default function PropertiesPanel() {
             <input
               type="color"
               id={`edge-color-${selectedEdge.id}`}
-              value={selectedEdge.style?.stroke || (isDarkMode ? '#A78BFA' : '#6366F1')} // Default based on theme
+              value={selectedEdge.style?.stroke || (isDarkMode ? '#A78BFA' : '#6366F1')}
               onChange={handleEdgeColorChange}
               className="w-full h-8 p-0 border-none cursor-pointer bg-transparent"
             />
