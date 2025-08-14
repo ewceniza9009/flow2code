@@ -169,7 +169,7 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
     <header className="h-12 bg-surface dark:bg-dark-surface border-b border-border dark:border-dark-border flex items-center justify-between px-3 shrink-0">
       
       <div className="flex items-center gap-4">
-        <img src='/flow2code.svg' alt='Flow2Code Logo' className='w-6 h-6' />
+        <img src='/flow2code.png' alt='Flow2Code Logo' className='w-6 h-6' />
         
         {currentFlowId ? (
           <div className="flex items-center gap-1 text-text-muted dark:text-dark-text-muted">
