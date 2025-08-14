@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { debounce } from 'lodash';
 import React from 'react';
 import { NODE_DEFINITIONS, NodeCategory, NodeDefinition } from '@flow2code/shared';
+import { saveAs } from 'file-saver';
 
 export type NodeData = {
   subflow?: { nodes: Node<NodeData>[], edges: Edge[] };
@@ -90,6 +91,8 @@ interface AppState {
   addNode: (nodeData: any) => void;
   applySuggestionAction: (suggestionId: string, action: AISuggestion['actions'][0]) => void;
   dismissSuggestion: (suggestionId: string) => void;
+  saveProjectToFile: () => void;
+  loadProjectFromFile: (fileContent: string) => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -117,7 +120,6 @@ export const useStore = create<AppState>((set, get) => ({
     set({ projects: projectsFromDb });
   },
   setActiveProject: (project) => {
-    // When setting an active project, load nodes, edges, and suggestions from the latest snapshot
     const latestSnapshot = project?.snapshots?.[project.snapshots.length - 1];
     set({
       activeProject: project,
@@ -378,7 +380,6 @@ export const useStore = create<AppState>((set, get) => ({
     get().updateProjectSnapshot();
   },
 
-
   swapEdgeDirection: (edgeId: string) => {
     const swapLogic = (edge: Edge): Edge => {
       if (edge.id !== edgeId) return edge;
@@ -498,6 +499,7 @@ export const useStore = create<AppState>((set, get) => ({
     const projectInDb = await db.projects.get(activeProject.id);
     if (!projectInDb) return;
 
+    // Correctly save the current suggestions from the state
     const newSnapshot: ProjectSnapshot = { timestamp: new Date(), nodes, edges, suggestions };
     
     const updatedSnapshots = [...projectInDb.snapshots, newSnapshot].slice(-5);
@@ -618,4 +620,51 @@ export const useStore = create<AppState>((set, get) => ({
     await db.projects.update(activeProject.id, { type: newType });
     set({ activeProject: updatedProject });
   },
+  
+  saveProjectToFile: () => {
+    const { activeProject, nodes, edges, suggestions, projectSettings } = get();
+    if (!activeProject) return;
+
+    const projectData = {
+      ...activeProject,
+      snapshots: [{
+        timestamp: new Date(),
+        nodes,
+        edges,
+        suggestions,
+      }],
+      settings: projectSettings
+    };
+    
+    const fileContent = JSON.stringify(projectData, null, 2);
+    const blob = new Blob([fileContent], { type: 'application/json' });
+    saveAs(blob, `${activeProject.name}.ftc`);
+  },
+
+  loadProjectFromFile: async (fileContent: string) => {
+    try {
+      const loadedProject = JSON.parse(fileContent);
+      
+      if (!loadedProject.id || !loadedProject.name || !loadedProject.snapshots) {
+        throw new Error("Invalid project file format.");
+      }
+      
+      const newId = uuidv4();
+      const projectWithNewId = { ...loadedProject, id: newId };
+
+      await db.projects.add(projectWithNewId);
+      await get().loadProjects();
+      get().setActiveProject(projectWithNewId);
+      
+      const latestSnapshot = projectWithNewId.snapshots[projectWithNewId.snapshots.length - 1];
+      get().setNodes(latestSnapshot.nodes);
+      get().setEdges(latestSnapshot.edges);
+      get().setSuggestions(latestSnapshot.suggestions);
+      
+      console.log(`Project "${projectWithNewId.name}" loaded successfully.`);
+    } catch (error) {
+      console.error("Failed to load project file:", error);
+      alert(`Failed to load project file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
 }));

@@ -9,23 +9,33 @@ export class Flow2CodeDB extends Dexie {
     this.version(1).stores({
       projects: '++id, name, createdAt' 
     });
-    this.version(2).upgrade(tx => {
-      return tx.table('projects').toCollection().modify(project => {
+    // Version 2: Add snapshots and settings to the projects table
+    this.version(2).upgrade(async tx => {
+      await tx.table('projects').toCollection().modify(project => {
         if (!project.snapshots) {
-          const currentNodes = project.nodes;
-          const currentEdges = project.edges;
-          delete project.nodes;
-          delete project.edges;
-          project.snapshots = [{
-            timestamp: project.createdAt || new Date(),
-            nodes: currentNodes || [],
-            edges: currentEdges || [],
+          // Cast to 'any' to access properties that might not exist on the new type
+          const oldProject = project as any;
+          
+          // Create a new snapshot from the old top-level data
+          const newSnapshot: ProjectSnapshot = {
+            timestamp: oldProject.createdAt || new Date(),
+            nodes: oldProject.nodes || [],
+            edges: oldProject.edges || [],
             suggestions: []
-          }];
+          };
+          project.snapshots = [newSnapshot];
+          
+          // Clean up old properties
+          delete oldProject.nodes;
+          delete oldProject.edges;
         }
+        
+        // Ensure every project has a settings object
         if (!project.settings) {
           project.settings = { cloudProvider: 'Other', deploymentStrategy: 'Docker', cicdTooling: '' };
         }
+
+        // Ensure every snapshot has a suggestions array
         for (const snapshot of project.snapshots) {
           if (!snapshot.suggestions) {
             snapshot.suggestions = [];

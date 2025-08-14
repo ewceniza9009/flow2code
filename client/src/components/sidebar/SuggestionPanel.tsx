@@ -1,6 +1,25 @@
 import { useStore } from "@/store/useStore";
 import { X, Lightbulb, Zap, Check, XCircle } from "lucide-react";
 
+const getLabelFromAction = (action: any): string => {
+  if (action.label && action.label.trim() !== '') {
+    return action.label;
+  }
+  switch (action.action) {
+    case 'add':
+      return `Add ${action.payload.type} node`;
+    case 'remove':
+      return `Remove element`;
+    case 'update':
+      if (action.payload.architecture) {
+        return `Change to ${action.payload.architecture}`;
+      }
+      return 'Update element';
+    default:
+      return 'Apply Fix';
+  }
+};
+
 export default function SuggestionsPanel() {
   const { 
     suggestions, 
@@ -79,8 +98,8 @@ export default function SuggestionsPanel() {
                     disabled={suggestion.applied}
                     className="flex items-center gap-1.5 px-2 py-1 text-xs bg-primary/20 text-primary rounded-md hover:bg-primary/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Zap size={14} />
-                    {action.label}
+                    <Zap size={14} className="flex-shrink-0" />
+                    {getLabelFromAction(action)}
                   </button>
                 ))}
                 <button

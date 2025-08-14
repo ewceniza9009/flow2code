@@ -116,23 +116,23 @@ function formatSystemDesign(nodes: any[], indent = ' '): string {
   nodes.forEach(node => {
     designString += `${indent}- Node: ${node.name} (ID: ${node.id}, Type: ${node.type}, Category: ${node.role})\n`;
     if (node.techStack) {
-      designString += `${indent}  - Tech Stack: ${node.techStack.join(', ')}\n`;
+      designString += `${indent}  - Tech Stack: ${node.techStack.join(', ')}\n`;
     }
     if (node.config) {
-      designString += `${indent}  - Config: ${JSON.stringify(node.config)}\n`;
+      designString += `${indent}  - Config: ${JSON.stringify(node.config)}\n`;
     }
     if (node.requirements) {
-      designString += `${indent}  - Requirements: ${node.requirements}\n`;
+      designString += `${indent}  - Requirements: ${node.requirements}\n`;
     }
     if (node.text) {
-      designString += `${indent}  - Text/Label: ${node.text}\n`;
+      designString += `${indent}  - Text/Label: ${node.text}\n`;
     }
 
     if (node.subflow && node.subflow.nodes.length > 0) {
-      designString += `${indent}  - Internal Sub-Flow:\n`;
-      designString += formatSystemDesign(node.subflow.nodes, indent + '    ');
+      designString += `${indent}  - Internal Sub-Flow:\n`;
+      designString += formatSystemDesign(node.subflow.nodes, indent + '    ');
       if(node.subflow.edges.length > 0) {
-        designString += `${indent}    - Sub-Flow Edges:\n${indent}      ${JSON.stringify(node.subflow.edges)}\n`;
+        designString += `${indent}    - Sub-Flow Edges:\n${indent}      ${JSON.stringify(node.subflow.edges)}\n`;
       }
     }
   });
@@ -146,7 +146,7 @@ function buildPrompt(project: any): string {
       Project Name: ${name}
       Architecture Type: ${type}
       Settings: ${JSON.stringify(settings, null, 2)}
-      
+      
       High-Level Components (Nodes):
 ${formatSystemDesign(nodes)}
 
@@ -182,7 +182,7 @@ ${formatSystemDesign(nodes)}
           - If a node contains an 'Internal Sub-Flow' with **technological nodes** (e.g., Backend, Frontend), treat them as modules within the parent service.
           - If a sub-flow contains **'Logic & Flow' nodes**, you MUST interpret this as a business logic flowchart. The sequence of these nodes defines the exact steps, conditions, and loops the code must implement. The \`Text/Label\` on each node is the instruction for that step.
 
-    2.  **'Logic & Flow' Node Meanings:**
+    2.  **'Logic & Flow' Node Meanings:**
         - **Process**: A standard operation or function call.
         - **Decision**: An if/else conditional block. The text inside is the condition to evaluate.
         - **Input/Output**: Receiving data from a source or sending it to a destination.
@@ -221,7 +221,7 @@ function buildSuggestionPrompt(project: any): string {
     \`\`\`
 
     **Instructions & Constraints:**
-    1.  **Analyze the Design Holistically:** Review the high-level nodes and edges, as well as any nested 'subflow' components. Identify potential issues related to best practices, security, scalability, and maintainability. For example, if a monolithic service has a very complex sub-flow, suggest breaking it into microservices. If a sub-flow contains 'Logic & Flow' nodes that are overly complex, suggest simplification.
+    1.  **Analyze the Design Holistically:** Review the high-level nodes and edges, as well as any nested 'subflow' components. Identify potential issues related to best practices, security, scalability, and maintainability. For example, if a monolithic service has a very complex sub-flow, suggest breaking it into microservices. If a sub-flow contains 'Logic & Flow' nodes that are overly complex, suggest simplification.
     2.  **Generate Suggestions:** Provide concrete suggestions to address any identified issues.
     3.  **Strict Output Format:** Your response MUST be ONLY a single, valid JSON array of objects. Your entire response must be parsable by \`JSON.parse()\`. Each object in the array must conform to this exact structure:
         -   \`id\`: A unique string identifier.
@@ -231,14 +231,16 @@ function buildSuggestionPrompt(project: any): string {
         -   \`actions\`: An array of action objects.
 
     4.  **Action Object Schema:** Each object in the \`actions\` array MUST follow one of these schemas:
-        -   **For adding a node:** \`{ "action": "add", "payload": { "type": "...", "name": "..." } }\`. The \`type\` MUST be one of these values: ${JSON.stringify(validNodeTypes)}.
-        -   **For removing a node:** \`{ "action": "remove", "payload": { "nodeId": "..." } }\`.
-        -   **For removing an edge:** \`{ "action": "remove", "payload": { "edgeId": "..." } }\`.
-        -   **For updating a node:** \`{ "action": "update", "payload": { "nodeId": "...", "name": "...", "requirements": "..." } }\`. Include only the fields to be changed.
-        -   **For updating an edge:** \`{ "action": "update", "payload": { "edgeId": "...", "label": "..." } }\`.
-        -   **For changing architecture type:** \`{ "action": "update", "payload": { "architecture": "Microservices" | "Monolithic" } }\`.
+        -   **For adding a node:** \`{ "label": "Implement X", "action": "add", "payload": { "type": "...", "name": "..." } }\`. The \`label\` is a clear instruction. The \`type\` MUST be one of these values: ${JSON.stringify(validNodeTypes)}.
+        -   **For removing a node:** \`{ "label": "Remove X", "action": "remove", "payload": { "nodeId": "..." } }\`.
+        -   **For removing an edge:** \`{ "label": "Remove connection Y", "action": "remove", "payload": { "edgeId": "..." } }\`.
+        -   **For updating a node:** \`{ "label": "Refactor X requirements", "action": "update", "payload": { "nodeId": "...", "name": "...", "requirements": "..." } }\`.
+        -   **For updating an edge:** \`{ "label": "Change protocol to Z", "action": "update", "payload": { "edgeId": "...", "label": "..." } }\`.
+        -   **For changing architecture type:** \`{ "label": "Change to Microservices", "action": "update", "payload": { "architecture": "Microservices" | "Monolithic" } }\`.
 
-    **Example of a valid response:**
+    **Crucial Note on Labels:** The \`label\` field is mandatory for every action and MUST be a short, clear, and descriptive command to the user. It should not be empty. If you cannot derive a specific label, use a generic one like "Apply Fix" or "Refactor". The user relies on these labels to understand the action.
+    
+    **Example of a valid response:**
     [
       {
         "id": "sugg-arch-1",
@@ -254,7 +256,6 @@ function buildSuggestionPrompt(project: any): string {
         ]
       }
     ]
-
     Begin your JSON response now.
     `;
 }

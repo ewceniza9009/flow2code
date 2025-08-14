@@ -1,4 +1,4 @@
-import { ArrowLeft, Files, Play, Trash2, PanelLeft, PanelRight, Sun, Moon, Sparkles, ChevronDown, Search, Pencil, Settings, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Files, Play, Trash2, PanelLeft, PanelRight, Sun, Moon, Sparkles, ChevronDown, Search, Pencil, Settings, Lightbulb, Download, Upload } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
@@ -34,6 +34,8 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
     codeGenerationType,
     setCodeGenerationType,
     suggestions,
+    saveProjectToFile,
+    loadProjectFromFile
   } = useStore();
 
   const projects = useLiveQuery(() => db.projects.toArray());
@@ -157,11 +159,25 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
     setIsChecking(true);
     try {
       await checkAndSuggest(activeProject);
-      setIsSuggestionsPanelOpen(true); // Open panel automatically after check
+      setIsSuggestionsPanelOpen(true);
     } finally {
       setIsChecking(false);
     }
   };
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const fileContent = e.target?.result as string;
+        loadProjectFromFile(fileContent);
+      };
+      reader.readAsText(file);
+    }
+    setIsActionsMenuOpen(false);
+  };
+
 
   const filteredProjects = projects?.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())) || [];
   const unappliedSuggestionsCount = suggestions.filter(s => !s.applied).length;
@@ -213,8 +229,8 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
                           onChange={(e) => setSearchTerm(e.target.value)}
                           className="w-full pl-8 bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
                         />
-                      </div>
-                      <div className="flex flex-col gap-1 max-h-40 overflow-y-auto hide-scrollbar">
+                  </div>
+                  <div className="flex flex-col gap-1 max-h-40 overflow-y-auto hide-scrollbar">
                         {filteredProjects.map((p: Project) => (
                           <div
                             key={p.id}
@@ -228,54 +244,70 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
                             {p.name}
                           </div>
                         ))}
-                      </div>
                     </div>
-                  )}
-                </div>
-              )}
-              
-              <div className="relative" ref={actionsMenuRef}>
-                <button
-                  onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)}
-                  className="flex items-center gap-1 px-2 py-1 text-sm bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md hover:bg-border dark:hover:bg-dark-border transition-colors"
-                >
-                  <Settings size={16} /> Actions <ChevronDown size={14} className={`transition-transform ${isActionsMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {isActionsMenuOpen && (
-                  <div className="absolute top-11 left-0 mt-2 z-20 flex flex-col p-2 bg-surface dark:bg-dark-surface border border-border dark:border-dark-border rounded-md shadow-lg w-48">
-                    <button 
-                      onClick={handleNewProjectClick} 
-                      className="flex items-center gap-2 px-2 py-1 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"
-                    >
-                      <Files size={16} /> New Project
-                    </button>
-                    <button 
-                      onClick={handleRenameClick} 
-                      className="flex items-center gap-2 px-2 py-1 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"
-                    >
-                      <Pencil size={16} /> Rename Project
-                    </button>
-                    <button 
-                      onClick={handleDeleteProject} 
-                      className="flex items-center gap-2 px-2 py-1 text-sm rounded-md hover:bg-red-500/10 text-red-400 transition-colors"
-                    >
-                      <Trash2 size={16} /> Delete Project
-                    </button>
-                    <div className="my-1 h-px bg-border dark:bg-dark-border" />
-                    <button 
-                      onClick={openSettingsModal} 
-                      className="flex items-center gap-2 px-2 py-1 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"
-                    >
-                      <Settings size={16} /> Settings
-                    </button>
                   </div>
                 )}
               </div>
-            </div>
-          ) : (
-            <h1 className="text-lg font-bold text-text-main dark:text-dark-text-main">Flow2Code</h1>
-          )
-        )}
+            )}
+            
+            <div className="relative" ref={actionsMenuRef}>
+              <button
+                onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)}
+                className="flex items-center gap-1 px-2 py-1 text-sm bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md hover:bg-border dark:hover:bg-dark-border transition-colors"
+              >
+                <Settings size={16} /> Actions <ChevronDown size={14} className={`transition-transform ${isActionsMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isActionsMenuOpen && (
+                <div className="absolute top-11 left-0 mt-2 z-20 flex flex-col p-2 bg-surface dark:bg-dark-surface border border-border dark:border-dark-border rounded-md shadow-lg w-48">
+                  <button
+                    onClick={handleNewProjectClick}
+                    className="flex items-center gap-2 px-2 py-1 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"
+                  >
+                    <Files size={16} /> New Project
+                  </button>
+                  <button
+                    onClick={saveProjectToFile}
+                    className="flex items-center gap-2 px-2 py-1 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"
+                  >
+                    <Download size={16} /> Save to File (.ftc)
+                  </button>
+                  <label className="flex items-center gap-2 px-2 py-1 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors cursor-pointer">
+                    <Upload size={16} /> Load from File (.ftc)
+                    <input
+                      type="file"
+                      accept=".ftc"
+                      className="hidden"
+                      onChange={handleFileChange}
+                      onClick={(e) => (e.currentTarget.value = '')}
+                    />
+                  </label>
+                  <button
+                    onClick={handleRenameClick}
+                    className="flex items-center gap-2 px-2 py-1 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"
+                  >
+                    <Pencil size={16} /> Rename Project
+                  </button>
+                  <button
+                    onClick={handleDeleteProject}
+                    className="flex items-center gap-2 px-2 py-1 text-sm rounded-md hover:bg-red-500/10 text-red-400 transition-colors"
+                  >
+                    <Trash2 size={16} /> Delete Project
+                  </button>
+                  <div className="my-1 h-px bg-border dark:bg-dark-border" />
+                  <button
+                    onClick={openSettingsModal}
+                    className="flex items-center gap-2 px-2 py-1 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"
+                  >
+                    <Settings size={16} /> Settings
+                  </button>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <h1 className="text-lg font-bold text-text-main dark:text-dark-text-main">Flow2Code</h1>
+      )
+      )}
       </div>
 
       <div className='flex items-center gap-2'>
