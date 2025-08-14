@@ -50,6 +50,7 @@ export default function FlowCanvas() {
     openContextMenu,
     closeContextMenu,
     enterSubflow,
+    highlightedElementIds,
   } = useStore();
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -68,7 +69,6 @@ export default function FlowCanvas() {
       event.preventDefault();
       closeContextMenu();
      
-      // Correctly get the node name from the data transfer
       const name = event.dataTransfer.getData('application/reactflow-nodename');
       if (!name) return;
 
@@ -77,7 +77,6 @@ export default function FlowCanvas() {
 
       const position = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
      
-      // This is the crucial part: determine the correct React Flow type
       let reactFlowType = 'custom';
       if (nodeDefinition.type === 'text-note' || nodeDefinition.type === 'shape' || nodeDefinition.type === 'icon' || nodeDefinition.type === 'flowchart' || nodeDefinition.type === 'group') {
         reactFlowType = nodeDefinition.type;
@@ -94,7 +93,7 @@ export default function FlowCanvas() {
       } else if (!isAnnotation && !isGroup && !isFlowchart) {
         initialData.requirements = `A standard ${nodeDefinition.name}.`;
       }
-      
+      
       let initialStyle = {};
       if (isGroup) {
         initialStyle = { width: 500, height: 400 };
@@ -108,7 +107,7 @@ export default function FlowCanvas() {
      
       const newNode: Node<NodeData> = {
         id: uuidv4(),
-        type: reactFlowType, // Use the determined type here
+        type: reactFlowType,
         position,
         data: initialData,
         style: initialStyle,
@@ -165,7 +164,22 @@ export default function FlowCanvas() {
     },
     [displayedFlow.nodes]
   );
+  
+  const nodesWithHighlight = useMemo(() => {
+    return displayedFlow.nodes.map(node => ({
+      ...node,
+      isHighlighted: highlightedElementIds.includes(node.id)
+    }));
+  }, [displayedFlow.nodes, highlightedElementIds]);
 
+  const edgesWithHighlight = useMemo(() => {
+    return displayedFlow.edges.map(edge => ({
+      ...edge,
+      isHighlighted: highlightedElementIds.includes(edge.id)
+    }));
+  }, [displayedFlow.edges, highlightedElementIds]);
+
+  // Conditional rendering must come after all hook calls.
   if (!activeProject) {
     return <div className="flex items-center justify-center h-full text-text-muted">Create a new project to begin.</div>;
   }
@@ -173,8 +187,8 @@ export default function FlowCanvas() {
   return (
     <div ref={reactFlowWrapper} className="h-full w-full relative" onClick={closeContextMenu} onDrop={onDrop} onDragOver={onDragOver}>
       <ReactFlow
-        nodes={displayedFlow.nodes}
-        edges={displayedFlow.edges}
+        nodes={nodesWithHighlight}
+        edges={edgesWithHighlight}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
