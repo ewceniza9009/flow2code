@@ -658,7 +658,8 @@ export const useStore = create<AppState>((set, get) => ({
       const latestSnapshot = projectWithNewId.snapshots[projectWithNewId.snapshots.length - 1];
       get().setNodes(latestSnapshot.nodes);
       get().setEdges(latestSnapshot.edges);
-      get().setSuggestions(latestSnapshot.suggestions);
+      
+      get().setSuggestions(latestSnapshot.suggestions || []);
       
       console.log(`Project "${projectWithNewId.name}" loaded successfully.`);
     } catch (error) {
