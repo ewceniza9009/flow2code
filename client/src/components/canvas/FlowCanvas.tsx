@@ -179,11 +179,6 @@ export default function FlowCanvas() {
     }));
   }, [displayedFlow.edges, highlightedElementIds]);
 
-  // Conditional rendering must come after all hook calls.
-  if (!activeProject) {
-    return <div className="flex items-center justify-center h-full text-text-muted">Create a new project to begin.</div>;
-  }
-
   return (
     <div ref={reactFlowWrapper} className="h-full w-full relative" onClick={closeContextMenu} onDrop={onDrop} onDragOver={onDragOver}>
       <ReactFlow

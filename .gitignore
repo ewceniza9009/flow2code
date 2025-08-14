@@ -36,5 +36,3 @@ Thumbs.db
 
 /server/src/controllers/generationController.ts
 /server/src/services/aiService.ts
-/server/src/controllers/generationController.ts
-/server/src/services/aiService.ts
