@@ -499,7 +499,6 @@ export const useStore = create<AppState>((set, get) => ({
     const projectInDb = await db.projects.get(activeProject.id);
     if (!projectInDb) return;
 
-    // Correctly save the current suggestions from the state
     const newSnapshot: ProjectSnapshot = { timestamp: new Date(), nodes, edges, suggestions };
     
     const updatedSnapshots = [...projectInDb.snapshots, newSnapshot].slice(-5);
