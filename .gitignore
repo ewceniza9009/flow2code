@@ -33,3 +33,8 @@ Thumbs.db
 
 /server/Dockerfile
 /docker-compose.yaml
+
+/server/src/controllers/generationController.ts
+/server/src/services/aiService.ts
+/server/src/controllers/generationController.ts
+/server/src/services/aiService.ts
