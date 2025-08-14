@@ -11,8 +11,6 @@ function App() {
     openNewProjectModal,
     loadProjects,
     setActiveProject,
-    setNodes,
-    setEdges,
     isDarkMode,
     isNodeLibraryOpen,
     isPropertiesPanelOpen,
@@ -30,17 +28,7 @@ function App() {
           await loadProjects();
           const firstProject = projectsFromDb[0];
           
-          if (firstProject.snapshots && firstProject.snapshots.length > 0) {
-            const latestSnapshot = firstProject.snapshots[firstProject.snapshots.length - 1];
-            setActiveProject(firstProject);
-            setNodes(latestSnapshot.nodes);
-            setEdges(latestSnapshot.edges);
-          } else {
-            console.warn(`Project "${firstProject.name}" found with no snapshots. Loading an empty canvas.`);
-            setActiveProject(firstProject);
-            setNodes([]);
-            setEdges([]);
-          }
+          setActiveProject(firstProject);
         }
       } catch (error) {
         console.error("Failed to initialize the application:", error);
