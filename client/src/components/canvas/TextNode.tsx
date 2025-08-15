@@ -2,7 +2,7 @@
 
 import { NodeProps } from 'reactflow';
 import { NodeResizer } from '@reactflow/node-resizer';
-import { useStore, NodeData } from '@/store/useStore';
+import { useStore, NodeData } from '@/store';
 import React, { useState, useEffect, useRef } from 'react';
 
 type TextNodeProps = NodeProps<NodeData> & {

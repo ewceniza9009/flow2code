@@ -1,4 +1,4 @@
-import { useStore } from '@/store/useStore';
+import { useStore } from '@/store';
 import { ArrowUp, ArrowDown, Trash2, Bold, Italic, Strikethrough, CaseSensitive } from 'lucide-react';
 import { useReactFlow } from 'reactflow';
 import React from 'react';

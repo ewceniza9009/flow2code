@@ -1,5 +1,5 @@
 import { Handle, Position, NodeProps } from 'reactflow';
-import { useStore, NodeData } from '@/store/useStore';
+import { useStore, NodeData } from '@/store';
 import { memo } from 'react';
 import { NodeResizer } from '@reactflow/node-resizer';
 

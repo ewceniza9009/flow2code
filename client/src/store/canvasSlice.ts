@@ -1,53 +1,22 @@
-import { create } from 'zustand';
+import { StateCreator } from 'zustand';
 import {
     Node, Edge, Connection,
     applyNodeChanges, applyEdgeChanges,
     OnNodesChange, OnEdgesChange, OnConnect,
     MarkerType
 } from 'reactflow';
-import { Project, ProjectSnapshot, ProjectSettings, CodeGenerationType, ProjectType, NodeData, AISuggestion } from '@/types/project';
-import { db } from '@/lib/db';
+import { NodeData } from '@/types/project';
 import { v4 as uuidv4 } from 'uuid';
-import { debounce } from 'lodash';
-import React from 'react';
 import { NODE_DEFINITIONS, NodeCategory, NodeDefinition } from '@flow2code/shared';
-import { saveAs } from 'file-saver';
+import React from 'react';
+import { AppState } from '.';
 
-interface ContextMenuState { id: string; top: number; left: number; }
-
-interface FileState {
-    path: string;
-    content: string;
-}
-
-interface AppState {
-    activeProject: Project | null;
-    projects: Project[];
+export interface CanvasState {
     nodes: Node<NodeData>[];
     edges: Edge[];
     selectedNode: Node<NodeData> | null;
     selectedEdge: Edge | null;
-    isNewProjectModalOpen: boolean;
-    isGenerating: boolean;
-    isChecking: boolean;
-    contextMenu: ContextMenuState | null;
     currentFlowId: string | null;
-    isDarkMode: boolean;
-    isNodeLibraryOpen: boolean;
-    isPropertiesPanelOpen: boolean;
-    isSuggestionsPanelOpen: boolean;
-    suggestions: AISuggestion[];
-    highlightedElementIds: string[];
-    projectSettings: ProjectSettings;
-    isSettingsModalOpen: boolean;
-    codeGenerationType: CodeGenerationType;
-
-    isEditorOpen: boolean;
-    generatedFiles: Record<string, string> | null;
-    activeFile: FileState | null;
-
-    loadProjects: () => Promise<void>;
-    setActiveProject: (project: Project | null) => void;
     setNodes: (nodes: Node<NodeData>[]) => void;
     setEdges: (edges: Edge[]) => void;
     setSelectedNode: (node: Node<NodeData> | null) => void;
@@ -63,110 +32,17 @@ interface AppState {
     deleteElement: (elementId: string, isNode: boolean) => void;
     enterSubflow: (nodeId: string) => void;
     exitSubflow: () => void;
-    openContextMenu: (payload: ContextMenuState) => void;
-    closeContextMenu: () => void;
     bringNodeToFront: (nodeId: string) => void;
     sendNodeToBack: (nodeId: string) => void;
-    openNewProjectModal: () => void;
-    closeNewProjectModal: () => void;
-    setIsGenerating: (isGenerating: boolean) => void;
-    setIsChecking: (isChecking: boolean) => void;
-    updateProjectSnapshot: () => void;
-    renameProject: (projectId: string, newName: string) => Promise<void>;
-    toggleDarkMode: () => void;
-    setIsNodeLibraryOpen: (isOpen: boolean) => void;
-    setIsPropertiesPanelOpen: (isOpen: boolean) => void;
-    setIsSuggestionsPanelOpen: (isOpen: boolean) => void;
-    setSuggestions: (suggestions: AISuggestion[]) => void;
-    setHighlightedElements: (ids: string[]) => void;
-    setProjectSettings: (settings: ProjectSettings) => void;
-    openSettingsModal: () => void;
-    closeSettingsModal: () => void;
-    setCodeGenerationType: (type: CodeGenerationType) => void;
-    updateProjectType: (newType: ProjectType) => Promise<void>;
     addNode: (nodeData: any) => void;
-    applySuggestionAction: (suggestionId: string, action: AISuggestion['actions'][0]) => void;
-    dismissSuggestion: (suggestionId: string) => void;
-    saveProjectToFile: () => void;
-    loadProjectFromFile: (fileContent: string) => Promise<void>;
-
-    openEditor: () => void;
-    closeEditor: () => void;
-    openFileInEditor: (path: string, content: string) => void;
-    updateFileContent: (path: string, newContent: string) => void;
-    setGeneratedFiles: (files: Record<string, string>) => void;
-    countProjects: number;
 }
 
-export const useStore = create<AppState>((set, get) => ({
-    activeProject: null, projects: [], nodes: [], edges: [],
-    selectedNode: null, selectedEdge: null,
-    isNewProjectModalOpen: false, isGenerating: false,
-    isChecking: false,
-    contextMenu: null, currentFlowId: null,
-    isDarkMode: true,
-    isNodeLibraryOpen: false,
-    isPropertiesPanelOpen: false,
-    isSuggestionsPanelOpen: false,
-    suggestions: [],
-    highlightedElementIds: [],
-    projectSettings: {
-        cloudProvider: 'Other',
-        deploymentStrategy: 'Docker',
-        cicdTooling: '',
-        architecturalPatterns: { ddd: false, eda: false, cqrs: false },
-        testingFramework: '',
-        securityPractices: { inputValidation: true, rbac: false, rateLimiting: false, owaspCompliance: true },
-        iacTool: 'None',
-        secretManagement: 'Environment Variables',
-    },
-    isSettingsModalOpen: false,
-    codeGenerationType: 'Flexible',
-
-    isEditorOpen: false,
-    generatedFiles: null,
-    activeFile: null,
-
-    loadProjects: async () => {
-        const projectsFromDb = await db.projects.toArray();
-        set({ projects: projectsFromDb });
-        set({ countProjects: projectsFromDb.length })
-    },
-    setActiveProject: (project) => {
-        const defaultSettings: ProjectSettings = {
-            cloudProvider: 'Other',
-            deploymentStrategy: 'Docker',
-            cicdTooling: '',
-            architecturalPatterns: { ddd: false, eda: false, cqrs: false },
-            testingFramework: '',
-            securityPractices: { inputValidation: true, rbac: false, rateLimiting: false, owaspCompliance: true },
-            iacTool: 'None',
-            secretManagement: 'Environment Variables',
-        };
-
-        const projectSettings = {
-            ...defaultSettings,
-            ...(project?.settings || {}),
-            architecturalPatterns: {
-                ...defaultSettings.architecturalPatterns,
-                ...(project?.settings?.architecturalPatterns || {}),
-            },
-            securityPractices: {
-                ...defaultSettings.securityPractices,
-                ...(project?.settings?.securityPractices || {}),
-            }
-        };
-
-        const latestSnapshot = project?.snapshots?.[project.snapshots.length - 1];
-        set({
-            activeProject: project,
-            nodes: latestSnapshot?.nodes || [],
-            edges: latestSnapshot?.edges || [],
-            suggestions: latestSnapshot?.suggestions || [],
-            projectSettings: projectSettings,
-            generatedFiles: project?.generatedFiles || null,
-        });
-    },
+export const createCanvasSlice: StateCreator<AppState, [], [], CanvasState> = (set, get) => ({
+    nodes: [],
+    edges: [],
+    selectedNode: null,
+    selectedEdge: null,
+    currentFlowId: null,
 
     setNodes: (nodes) => {
         const { currentFlowId } = get();
@@ -331,11 +207,7 @@ export const useStore = create<AppState>((set, get) => ({
                     updatedSelectedNode = updatedNodes.find(n => n.id === nodeId) || updatedSelectedNode;
                 }
             }
-
-            return {
-                nodes: updatedNodes,
-                selectedNode: updatedSelectedNode,
-            };
+            return { nodes: updatedNodes, selectedNode: updatedSelectedNode };
         });
         get().updateProjectSnapshot();
     },
@@ -368,10 +240,7 @@ export const useStore = create<AppState>((set, get) => ({
                 }
             }
 
-            return {
-                nodes: updatedNodes,
-                selectedNode: updatedSelectedNode,
-            };
+            return { nodes: updatedNodes, selectedNode: updatedSelectedNode };
         });
         get().updateProjectSnapshot();
     },
@@ -386,14 +255,8 @@ export const useStore = create<AppState>((set, get) => ({
 
         const updatedAllEdges = currentEdges.map(e => {
             if (e.id === edgeId) {
-                const updatedEdge = {
-                    ...e,
-                    data: { ...e.data, ...payload.data },
-                    style: { ...e.style, ...payload.style },
-                };
-                if (payload.label !== undefined) {
-                    updatedEdge.label = payload.label;
-                }
+                const updatedEdge: Edge = { ...e, data: { ...e.data, ...payload.data }, style: { ...e.style, ...payload.style } };
+                if (payload.label !== undefined) updatedEdge.label = payload.label;
                 const currentLabel = updatedEdge.label;
                 const isDashed = updatedEdge.style?.strokeDasharray !== undefined && updatedEdge.style.strokeDasharray !== 'none';
                 updatedEdge.data.isAnimated = (currentLabel === 'WebSocket' || currentLabel === 'Stream') && !isDashed;
@@ -447,9 +310,7 @@ export const useStore = create<AppState>((set, get) => ({
         set(state => {
             if (state.currentFlowId === null) {
                 const newNodes = isNode ? state.nodes.filter(n => n.id !== elementId) : state.nodes;
-                const newEdges = isNode
-                    ? state.edges.filter(e => e.source !== elementId && e.target !== elementId)
-                    : state.edges.filter(e => e.id !== elementId);
+                const newEdges = isNode ? state.edges.filter(e => e.source !== elementId && e.target !== elementId) : state.edges.filter(e => e.id !== elementId);
                 return { nodes: newNodes, edges: newEdges, selectedNode: null, selectedEdge: null };
             }
             const newNodes = state.nodes.map(n => {
@@ -482,9 +343,6 @@ export const useStore = create<AppState>((set, get) => ({
     },
     exitSubflow: () => set({ currentFlowId: null, selectedNode: null, selectedEdge: null }),
 
-    openContextMenu: (payload) => set({ contextMenu: payload }),
-    closeContextMenu: () => set({ contextMenu: null }),
-
     bringNodeToFront: (nodeId: string) => {
         const updater = (nodes: Node<NodeData>[]) => {
             if (nodes.length === 0) return [];
@@ -505,6 +363,7 @@ export const useStore = create<AppState>((set, get) => ({
             set({ nodes: newNodes });
         }
     },
+
     sendNodeToBack: (nodeId: string) => {
         const updater = (nodes: Node<NodeData>[]) => {
             if (nodes.length === 0) return [];
@@ -526,59 +385,6 @@ export const useStore = create<AppState>((set, get) => ({
         }
     },
 
-    openNewProjectModal: () => set({ isNewProjectModalOpen: true }),
-    closeNewProjectModal: () => set({ isNewProjectModalOpen: false }),
-    setIsGenerating: (isGenerating) => set({ isGenerating }),
-    setIsChecking: (isChecking) => set({ isChecking }),
-    updateProjectSnapshot: debounce(async () => {
-        const { activeProject, nodes, edges, suggestions } = get();
-        if (!activeProject) return;
-
-        const projectInDb = await db.projects.get(activeProject.id);
-        if (!projectInDb) return;
-
-        const newSnapshot: ProjectSnapshot = { timestamp: new Date(), nodes, edges, suggestions };
-        
-        const updatedSnapshots = [...projectInDb.snapshots, newSnapshot].slice(-5);
-        
-        await db.projects.update(activeProject.id, {
-            snapshots: updatedSnapshots
-        });
-    }, 1000),
-
-    renameProject: async (projectId, newName) => {
-        const { projects, activeProject } = get();
-        if (!activeProject || activeProject.id !== projectId) return;
-
-        await db.projects.update(projectId, { name: newName });
-        
-        const updatedProjects = projects.map(p =>
-            p.id === projectId ? { ...p, name: newName } : p
-        );
-        set({
-            projects: updatedProjects,
-            activeProject: { ...activeProject, name: newName }
-        });
-    },
-
-    toggleDarkMode: () => {
-        set(state => ({ isDarkMode: !state.isDarkMode }));
-    },
-    setIsNodeLibraryOpen: (isOpen) => set({ isNodeLibraryOpen: isOpen }),
-    setIsPropertiesPanelOpen: (isOpen) => set({ isPropertiesPanelOpen: isOpen }),
-    setIsSuggestionsPanelOpen: (isOpen) => {
-        set({ isSuggestionsPanelOpen: isOpen });
-        if (!isOpen) {
-            set({ highlightedElementIds: [] });
-        }
-    },
-    setSuggestions: (suggestions) => set({ suggestions: suggestions.map(s => ({ ...s, applied: false })) }),
-    setHighlightedElements: (ids: string[]) => set({ highlightedElementIds: ids }),
-    setProjectSettings: (settings: ProjectSettings) => set({ projectSettings: settings }),
-    openSettingsModal: () => set({ isSettingsModalOpen: true }),
-    closeSettingsModal: () => set({ isSettingsModalOpen: false }),
-    setCodeGenerationType: (type) => set({ codeGenerationType: type }),
-
     addNode: (nodeData) => {
         const { type, name, ...restData } = nodeData;
         const nodeDefinition = NODE_DEFINITIONS.flatMap((c: NodeCategory) => c.nodes).find((n: NodeDefinition) => n.type === type);
@@ -588,13 +394,13 @@ export const useStore = create<AppState>((set, get) => ({
         }
 
         const initialData: NodeData = { ...nodeDefinition, ...nodeDefinition.data, name, ...restData };
-        
+
         if (nodeDefinition.type === 'text-note') {
             initialData.text = 'Editable Note';
         } else if (nodeDefinition.category !== 'Annotations' && nodeDefinition.type !== 'group') {
             initialData.requirements = `A standard ${name}.`;
         }
-        
+
         const newNode: Node<NodeData> = {
             id: uuidv4(),
             type: nodeDefinition.category === 'Annotations' || nodeDefinition.type === 'group' ? nodeDefinition.type : 'custom',
@@ -606,131 +412,4 @@ export const useStore = create<AppState>((set, get) => ({
         const { nodes } = get();
         get().setNodes([...nodes, newNode]);
     },
-    
-    applySuggestionAction: (suggestionId, action) => {
-        const { updateNodeData, updateEdgeData, deleteElement, addNode, updateProjectType, suggestions } = get();
-
-        switch (action.action) {
-            case 'add':
-                if (action.payload.type) {
-                    addNode(action.payload);
-                }
-                break;
-            case 'remove':
-                if (action.payload.nodeId) {
-                    deleteElement(action.payload.nodeId, true);
-                } else if (action.payload.edgeId) {
-                    deleteElement(action.payload.edgeId, false);
-                }
-                break;
-            case 'update':
-                if (action.payload.nodeId) {
-                    const { nodeId, ...data } = action.payload;
-                    updateNodeData(nodeId, data);
-                } else if (action.payload.edgeId) {
-                    const { edgeId, ...data } = action.payload;
-                    updateEdgeData(edgeId, data);
-                } else if (action.payload.architecture) {
-                    updateProjectType(action.payload.architecture);
-                }
-                break;
-            default:
-                console.warn("Unknown suggestion action:", action.action);
-        }
-
-        const updatedSuggestions = suggestions.map(s => s.id === suggestionId ? { ...s, applied: true } : s);
-        set({ suggestions: updatedSuggestions });
-    },
-
-    dismissSuggestion: (suggestionId) => {
-        set(state => ({
-            suggestions: state.suggestions.filter(s => s.id !== suggestionId)
-        }));
-    },
-
-    updateProjectType: async (newType: ProjectType) => {
-        const { activeProject } = get();
-        if (!activeProject) return;
-
-        const updatedProject = { ...activeProject, type: newType };
-
-        await db.projects.update(activeProject.id, { type: newType });
-        set({ activeProject: updatedProject });
-    },
-    
-    saveProjectToFile: () => {
-        const { activeProject, nodes, edges, suggestions, projectSettings } = get();
-        if (!activeProject) return;
-
-        const projectData = {
-            ...activeProject,
-            snapshots: [{
-                timestamp: new Date(),
-                nodes,
-                edges,
-                suggestions,
-            }],
-            settings: projectSettings
-        };
-        
-        const fileContent = JSON.stringify(projectData, null, 2);
-        const blob = new Blob([fileContent], { type: 'application/json' });
-        saveAs(blob, `${activeProject.name}.ftc`);
-    },
-
-    loadProjectFromFile: async (fileContent: string) => {
-        try {
-            const loadedProject = JSON.parse(fileContent);
-            
-            if (!loadedProject.id || !loadedProject.name || !loadedProject.snapshots) {
-                throw new Error("Invalid project file format.");
-            }
-            
-            const newId = uuidv4();
-            const projectWithNewId = { ...loadedProject, id: newId };
-
-            await db.projects.add(projectWithNewId);
-            await get().loadProjects();
-            get().setActiveProject(projectWithNewId);
-            
-            const latestSnapshot = projectWithNewId.snapshots[projectWithNewId.snapshots.length - 1];
-            get().setNodes(latestSnapshot.nodes);
-            get().setEdges(latestSnapshot.edges);
-            
-            get().setSuggestions(latestSnapshot.suggestions || []);
-            
-            console.log(`Project "${projectWithNewId.name}" loaded successfully.`);
-        } catch (error) {
-            console.error("Failed to load project file:", error);
-            alert(`Failed to load project file: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-    },
-    
-    setGeneratedFiles: (files: Record<string, string>) => {
-        const { activeProject } = get();
-        if (activeProject) {
-            const updatedProject = { ...activeProject, generatedFiles: files };
-            db.projects.update(activeProject.id, { generatedFiles: files });
-            set({ generatedFiles: files, activeProject: updatedProject });
-        } else {
-            set({ generatedFiles: files });
-        }
-    },
-    
-    openEditor: () => set({ isEditorOpen: true }),
-    closeEditor: () => set({ isEditorOpen: false, activeFile: null }),
-    openFileInEditor: (path, content) => set({ activeFile: { path, content } }),
-    updateFileContent: (path, newContent) => {
-        set(state => {
-            if (state.generatedFiles) {
-                return {
-                    generatedFiles: { ...state.generatedFiles, [path]: newContent },
-                    activeFile: { path, content: newContent },
-                };
-            }
-            return {};
-        });
-    },
-    countProjects: 0,
-
-}));
+});

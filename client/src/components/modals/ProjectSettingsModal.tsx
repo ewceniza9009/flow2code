@@ -1,4 +1,4 @@
-import { useStore } from '@/store/useStore';
+import { useStore } from '@/store';
 import { X, Save, Eraser, Settings, Network, ShieldCheck, CloudCog } from 'lucide-react';
 import { useState, useEffect, FC, ReactNode } from 'react';
 import { ProjectSettings, CloudProvider, DeploymentStrategy } from '@/types/project';

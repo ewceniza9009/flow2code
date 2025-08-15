@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { saveAs } from 'file-saver';
 import { Project, CodeGenerationType, NodeData } from '@/types/project';
-import { useStore } from '@/store/useStore';
+import { useStore } from '@/store';
 import { Node, Edge } from 'reactflow';
 
 const processNodesRecursive = (nodes: Node<NodeData>[]) => {

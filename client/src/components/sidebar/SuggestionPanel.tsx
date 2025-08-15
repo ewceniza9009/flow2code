@@ -1,4 +1,4 @@
-import { useStore } from "@/store/useStore";
+import { useStore } from "@/store";
 import { X, Lightbulb, Zap, Check, XCircle } from "lucide-react";
 
 const getLabelFromAction = (action: any): string => {

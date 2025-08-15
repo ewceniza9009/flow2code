@@ -1,4 +1,4 @@
-import { useStore, NodeData } from "@/store/useStore";
+import { useStore, NodeData } from "@/store";
 import { X, Share2 as EdgeIcon, ArrowRightLeft, AlignLeft, Trash2, Palette, Terminal, Code } from "lucide-react";
 import Mde from 'react-simplemde-editor';
 import "easymde/dist/easymde.min.css";

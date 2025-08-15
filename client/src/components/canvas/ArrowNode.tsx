@@ -1,6 +1,6 @@
 import { NodeProps } from 'reactflow';
 import { NodeResizer } from '@reactflow/node-resizer';
-import { useStore, NodeData } from '@/store/useStore';
+import { useStore, NodeData } from '@/store';
 
 const ArrowNode = ({ id, selected }: NodeProps<NodeData>) => {
   const { updateNodeDimensions } = useStore();

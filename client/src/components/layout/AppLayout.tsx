@@ -3,11 +3,11 @@ import NodeLibrary from '../sidebar/NodeLibrary';
 import FlowCanvas from '../canvas/FlowCanvas';
 import PropertiesPanel from "../sidebar/PropertiesPanel";
 import { ReactFlowProvider } from "reactflow";
-import { useStore } from '@/store/useStore';
+import { useStore } from '@/store';
 import ProjectSettingsModal from '../modals/ProjectSettingsModal';
 import SuggestionsPanel from '../sidebar/SuggestionPanel';
-import FileTree from '../Editor/FileTree';
-import CodeEditor from '../Editor/CodeEditor';
+import FileTree from '../editor/FileTree';
+import CodeEditor from '../editor/CodeEditor';
 import React from 'react';
 
 export default function AppLayout() {

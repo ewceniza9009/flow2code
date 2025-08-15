@@ -1,5 +1,5 @@
 import { ArrowLeft, Files, Play, Trash2, PanelLeft, PanelRight, Sun, Moon, Sparkles, ChevronDown, Search, Pencil, Settings, Lightbulb, Download, Upload, PlusIcon, Code2, X } from 'lucide-react';
-import { useStore } from '@/store/useStore';
+import { useStore } from '@/store';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { Project } from '@/types/project';

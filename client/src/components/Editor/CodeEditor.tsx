@@ -1,5 +1,5 @@
 import Editor from "@monaco-editor/react";
-import { useStore } from "@/store/useStore";
+import { useStore } from "@/store";
 import { useState, useEffect } from "react";
 import React from 'react';
 

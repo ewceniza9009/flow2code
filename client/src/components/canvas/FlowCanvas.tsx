@@ -9,7 +9,7 @@ import ReactFlow, {
   useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { useStore, NodeData } from '@/store/useStore';
+import { useStore, NodeData } from '@/store';
 import { useCallback, useMemo, useRef } from 'react';
 import CustomNode from './CustomNode';
 import { v4 as uuidv4 } from 'uuid';

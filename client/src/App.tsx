@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import AppLayout from "./components/layout/AppLayout";
-import { useStore } from './store/useStore';
+import { useStore } from './store';
 import NewProjectModal from './components/modals/NewProjectModal';
 import { db } from './lib/db';
 import { ReactFlowProvider } from 'reactflow';
