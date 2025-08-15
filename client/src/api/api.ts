@@ -1,9 +1,8 @@
 import axios from 'axios';
 import { saveAs } from 'file-saver';
-import { Project, CodeGenerationType } from '@/types/project';
+import { Project, CodeGenerationType, NodeData } from '@/types/project';
 import { useStore } from '@/store/useStore';
 import { Node, Edge } from 'reactflow';
-import { NodeData } from '@/store/useStore';
 
 const processNodesRecursive = (nodes: Node<NodeData>[]) => {
     const processedNodes: any[] = [];
@@ -23,7 +22,7 @@ const processNodesRecursive = (nodes: Node<NodeData>[]) => {
         if (node.data.subflow && (node.data.subflow.nodes.length > 0 || node.data.subflow.edges.length > 0)) {
             processedNode.subflow = {
                 nodes: processNodesRecursive(node.data.subflow.nodes),
-                edges: node.data.subflow.edges.map(edge => ({
+                edges: node.data.subflow.edges.map((edge: Edge) => ({
                     id: edge.id,
                     source: edge.source,
                     target: edge.target,
@@ -42,7 +41,7 @@ const prepareProjectForApi = (project: Project, codeGenerationType?: CodeGenerat
     
     const nodes = processNodesRecursive(latestSnapshot.nodes);
     
-    const edges = latestSnapshot.edges.map(edge => ({
+    const edges = latestSnapshot.edges.map((edge: Edge) => ({
         id: edge.id,
         source: edge.source,
         target: edge.target,

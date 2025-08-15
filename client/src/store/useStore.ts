@@ -5,27 +5,13 @@ import {
     OnNodesChange, OnEdgesChange, OnConnect,
     MarkerType
 } from 'reactflow';
-import { Project, ProjectSnapshot, ProjectSettings, CodeGenerationType, ProjectType } from '@/types/project';
+import { Project, ProjectSnapshot, ProjectSettings, CodeGenerationType, ProjectType, NodeData, AISuggestion } from '@/types/project';
 import { db } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import { debounce } from 'lodash';
 import React from 'react';
 import { NODE_DEFINITIONS, NodeCategory, NodeDefinition } from '@flow2code/shared';
 import { saveAs } from 'file-saver';
-
-export type NodeData = {
-    subflow?: { nodes: Node<NodeData>[], edges: Edge[] };
-    [key: string]: any;
-};
-
-export interface AISuggestion {
-    id: string;
-    type: 'architectural' | 'node' | 'edge';
-    title: string;
-    description: string;
-    actions: { label: string; action: 'add' | 'remove' | 'update'; payload: any; }[];
-    applied?: boolean;
-}
 
 interface ContextMenuState { id: string; top: number; left: number; }
 
@@ -128,6 +114,11 @@ export const useStore = create<AppState>((set, get) => ({
         cloudProvider: 'Other',
         deploymentStrategy: 'Docker',
         cicdTooling: '',
+        architecturalPatterns: { ddd: false, eda: false, cqrs: false },
+        testingFramework: '',
+        securityPractices: { inputValidation: true, rbac: false, rateLimiting: false, owaspCompliance: true },
+        iacTool: 'None',
+        secretManagement: 'Environment Variables',
     },
     isSettingsModalOpen: false,
     codeGenerationType: 'Flexible',
@@ -142,15 +133,38 @@ export const useStore = create<AppState>((set, get) => ({
         set({ countProjects: projectsFromDb.length })
     },
     setActiveProject: (project) => {
+        const defaultSettings: ProjectSettings = {
+            cloudProvider: 'Other',
+            deploymentStrategy: 'Docker',
+            cicdTooling: '',
+            architecturalPatterns: { ddd: false, eda: false, cqrs: false },
+            testingFramework: '',
+            securityPractices: { inputValidation: true, rbac: false, rateLimiting: false, owaspCompliance: true },
+            iacTool: 'None',
+            secretManagement: 'Environment Variables',
+        };
+
+        const projectSettings = {
+            ...defaultSettings,
+            ...(project?.settings || {}),
+            architecturalPatterns: {
+                ...defaultSettings.architecturalPatterns,
+                ...(project?.settings?.architecturalPatterns || {}),
+            },
+            securityPractices: {
+                ...defaultSettings.securityPractices,
+                ...(project?.settings?.securityPractices || {}),
+            }
+        };
+
         const latestSnapshot = project?.snapshots?.[project.snapshots.length - 1];
         set({
             activeProject: project,
             nodes: latestSnapshot?.nodes || [],
             edges: latestSnapshot?.edges || [],
             suggestions: latestSnapshot?.suggestions || [],
-            projectSettings: project?.settings || { cloudProvider: 'Other', deploymentStrategy: 'Docker', cicdTooling: '' },
-            // FIX: Ensure generatedFiles are loaded from the database
-            generatedFiles: project?.generatedFiles || null, 
+            projectSettings: projectSettings,
+            generatedFiles: project?.generatedFiles || null,
         });
     },
 
