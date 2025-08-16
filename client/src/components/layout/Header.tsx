@@ -6,6 +6,7 @@ import { Project } from '@/types/project';
 import { generateCodeAndSetFiles, checkAndSuggest } from '@/api/api';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence, Transition } from 'framer-motion';
+import { AutosizeInput } from './AutoSizeInput';
 
 interface HeaderProps {
     toggleLeftPanel: () => void;
@@ -267,14 +268,15 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
                         activeProject && (
                             <div className="flex items-center gap-2">
                                 {isRenamingActive ? (
-                                    <input
+                                    <AutosizeInput
                                         ref={projectNameRef}
                                         type="text"
                                         value={projectNameInput}
                                         onChange={(e) => setProjectNameInput(e.target.value)}
                                         onBlur={handleRenameBlur}
                                         onKeyDown={handleRenameKeyDown}
-                                        className="bg-background dark:bg-dark-background border border-primary rounded-md px-3 py-1.5 text-sm font-semibold focus:ring-2 focus:ring-primary focus:outline-none w-48"
+                                        className="bg-background dark:bg-dark-background border border-primary rounded-md px-3 py-1.5 text-sm font-semibold focus:ring-2 focus:ring-primary focus:outline-none"
+                                        autoFocus
                                     />
                                 ) : (
                                     <div className="relative" ref={projectListRef}>
