@@ -234,7 +234,7 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
 
             {/* --- LEFT SECTION: Project Navigation & Info --- */}
             <div className="flex items-center gap-3">
-                <img src='/flow2code.png' alt='Flow2Code Logo' className='w-7 h-7' />
+                <img src='/flow2code_notext.png' alt='Flow2Code Logo' className='w-7 h-7' />
                 <div className="w-px h-6 bg-border dark:bg-dark-border"></div>
 
                 {currentFlowId ? (
