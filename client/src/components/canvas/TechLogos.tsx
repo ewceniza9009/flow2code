@@ -122,8 +122,5 @@ export const LogoMap: Record<string, React.FC<LogoProps>> = {
 };
 
 export const DefaultLogo = ({ size = 20 }: { size?: number }) => (
-  <svg viewBox="0 0 24 24" width={size} height={size} fill="none">
-    <circle cx="12" cy="12" r="10" stroke="#ccc" strokeWidth="2" />
-    <path d="M8 12h8M12 8v8" stroke="#ccc" strokeWidth="2" strokeLinecap="round" />
-  </svg>
+  <img src="./flow2code_notext.png" height={size} width={size}/>
 );
