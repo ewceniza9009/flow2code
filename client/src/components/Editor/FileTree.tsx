@@ -103,7 +103,7 @@ export default function FileTree({ files }: FileTreeProps) {
   const rootChildren = Object.values(fileTree.children || {});
 
   return (
-    <div className="h-[94vh] w-[300px] flex-shrink-0 bg-surface dark:bg-dark-surface border-r border-border dark:border-dark-border text-sm flex flex-col">
+    <div className="h-[93vh] w-[300px] flex-shrink-0 bg-surface dark:bg-dark-surface border-r border-border dark:border-dark-border text-sm flex flex-col">
       <div className="overflow-y-auto flex-grow custom-scrollbar p-3">
         {rootChildren.map(node => (
           <FileTreeItem

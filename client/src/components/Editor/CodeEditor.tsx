@@ -1,7 +1,6 @@
 import Editor from "@monaco-editor/react";
 import { useStore } from "@/store";
 import { useState, useEffect } from "react";
-import React from 'react';
 
 export default function CodeEditor() {
   const { activeFile, updateFileContent } = useStore();
