@@ -41,7 +41,7 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
         closeEditor,
         generatedFiles,
         openEditor,
-        activeFile
+        countProjects
     } = useStore();
 
     const projects = useLiveQuery(() => db.projects.toArray());
@@ -234,7 +234,7 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
 
             {/* --- LEFT SECTION: Project Navigation & Info --- */}
             <div className="flex items-center gap-3">
-                <img src='/flow2code_notext.png' alt='Flow2Code Logo' className='w-7 h-7' />
+                <img src='/flow2code.png' alt='Flow2Code Logo' className='w-7 h-7' />
                 <div className="w-px h-6 bg-border dark:bg-dark-border"></div>
 
                 {currentFlowId ? (
@@ -245,73 +245,92 @@ export default function Header({ toggleLeftPanel, toggleRightPanel }: HeaderProp
                         <span className="text-text-muted dark:text-dark-text-muted">/</span>
                         <span className="font-semibold ml-1">{parentNode?.data.name || 'Subflow'}</span>
                     </div>
-                ) : (
-                    activeProject && (
-                        <div className="flex items-center gap-2">
-                            {isRenamingActive ? (
-                                <input
-                                    ref={projectNameRef}
-                                    type="text"
-                                    value={projectNameInput}
-                                    onChange={(e) => setProjectNameInput(e.target.value)}
-                                    onBlur={handleRenameBlur}
-                                    onKeyDown={handleRenameKeyDown}
-                                    className="bg-background dark:bg-dark-background border border-primary rounded-md px-3 py-1.5 text-sm font-semibold focus:ring-2 focus:ring-primary focus:outline-none w-48"
-                                />
-                            ) : (
-                                <div className="relative" ref={projectListRef}>
-                                    <button
-                                        onClick={() => setIsProjectsListOpen(!isProjectsListOpen)}
-                                        className="flex items-center gap-2 px-3 py-1.5 text-sm bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md hover:bg-border/40 dark:hover:bg-dark-border/40 transition-colors"
-                                    >
-                                        <Files size={15} />
-                                        <span className="font-semibold">{activeProject.name}</span>
-                                        <ChevronDown size={14} className={`transition-transform ${isProjectsListOpen ? 'rotate-180' : ''}`} />
+                ) : (                    
+                    countProjects === 0 ? (
+                        <div className="relative" ref={actionsMenuRef}>
+                            <button onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)} className="p-2 rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors">
+                                <MoreHorizontal size={18} />
+                            </button>
+                            <AnimatePresence>
+                                {isActionsMenuOpen && (
+                                    <motion.div {...dropdownAnimation} className="absolute top-full left-0 mt-2 z-50 flex flex-col p-2 bg-surface dark:bg-dark-surface border border-border dark:border-dark-border rounded-lg shadow-2xl w-48">
+                                        <button onClick={handleNewProjectClick} className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"><PlusIcon size={16} /> New Project</button>
+                                        <label className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors cursor-pointer">
+                                            <Upload size={16} /> Load from File...
+                                            <input type="file" accept=".ftc" className="hidden" onChange={handleFileChange} onClick={(e) => (e.currentTarget.value = '')} />
+                                        </label>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    ) : (
+                        activeProject && (
+                            <div className="flex items-center gap-2">
+                                {isRenamingActive ? (
+                                    <input
+                                        ref={projectNameRef}
+                                        type="text"
+                                        value={projectNameInput}
+                                        onChange={(e) => setProjectNameInput(e.target.value)}
+                                        onBlur={handleRenameBlur}
+                                        onKeyDown={handleRenameKeyDown}
+                                        className="bg-background dark:bg-dark-background border border-primary rounded-md px-3 py-1.5 text-sm font-semibold focus:ring-2 focus:ring-primary focus:outline-none w-48"
+                                    />
+                                ) : (
+                                    <div className="relative" ref={projectListRef}>
+                                        <button
+                                            onClick={() => setIsProjectsListOpen(!isProjectsListOpen)}
+                                            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md hover:bg-border/40 dark:hover:bg-dark-border/40 transition-colors"
+                                        >
+                                            <Files size={15} />
+                                            <span className="font-semibold">{activeProject.name}</span>
+                                            <ChevronDown size={14} className={`transition-transform ${isProjectsListOpen ? 'rotate-180' : ''}`} />
+                                        </button>
+                                        <AnimatePresence>
+                                            {isProjectsListOpen && (                                            
+                                                <motion.div {...dropdownAnimation} className="absolute top-full left-0 mt-2 z-50 flex flex-col p-2 bg-surface dark:bg-dark-surface border border-border dark:border-dark-border rounded-lg shadow-2xl w-64">
+                                                    <div className="relative mb-2">
+                                                        <Search size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted dark:text-dark-text-muted" />
+                                                        <input type="text" placeholder="Search projects..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-8 bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1.5 text-sm focus:ring-1 focus:ring-primary focus:outline-none" />
+                                                    </div>
+                                                    <div className="flex flex-col gap-1 max-h-48 overflow-y-auto custom-scrollbar">
+                                                        {displayedProjects.map((p: Project) => (
+                                                            <div key={p.id} className={`p-2 rounded-md cursor-pointer text-sm font-medium transition-colors ${activeProject.id === p.id ? 'bg-primary/20 text-primary' : 'hover:bg-background dark:hover:bg-dark-background'}`} onClick={() => handleProjectSelect(p.id)}>
+                                                                {p.name}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="my-2 h-px bg-border dark:bg-dark-border" />
+                                                    <button onClick={handleNewProjectClick} className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"><PlusIcon size={16} /> New Project</button>
+                                                    <label className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors cursor-pointer">
+                                                        <Upload size={16} /> Load from File...
+                                                        <input type="file" accept=".ftc" className="hidden" onChange={handleFileChange} onClick={(e) => (e.currentTarget.value = '')} />
+                                                    </label>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                )}
+                                <div className="relative" ref={actionsMenuRef}>
+                                    <button onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)} className="p-2 rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors">
+                                        <MoreHorizontal size={18} />
                                     </button>
                                     <AnimatePresence>
-                                        {isProjectsListOpen && (
-                                            <motion.div {...dropdownAnimation} className="absolute top-full left-0 mt-2 z-50 flex flex-col p-2 bg-surface dark:bg-dark-surface border border-border dark:border-dark-border rounded-lg shadow-2xl w-64">
-                                                <div className="relative mb-2">
-                                                    <Search size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted dark:text-dark-text-muted" />
-                                                    <input type="text" placeholder="Search projects..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-8 bg-background dark:bg-dark-background border border-border dark:border-dark-border rounded-md px-2 py-1.5 text-sm focus:ring-1 focus:ring-primary focus:outline-none" />
-                                                </div>
-                                                <div className="flex flex-col gap-1 max-h-48 overflow-y-auto custom-scrollbar">
-                                                    {displayedProjects.map((p: Project) => (
-                                                        <div key={p.id} className={`p-2 rounded-md cursor-pointer text-sm font-medium transition-colors ${activeProject.id === p.id ? 'bg-primary/20 text-primary' : 'hover:bg-background dark:hover:bg-dark-background'}`} onClick={() => handleProjectSelect(p.id)}>
-                                                            {p.name}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <div className="my-2 h-px bg-border dark:bg-dark-border" />
-                                                <button onClick={handleNewProjectClick} className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"><PlusIcon size={16} /> New Project</button>
-                                                <label className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors cursor-pointer">
-                                                    <Upload size={16} /> Load from File...
-                                                    <input type="file" accept=".ftc" className="hidden" onChange={handleFileChange} onClick={(e) => (e.currentTarget.value = '')} />
-                                                </label>
+                                        {isActionsMenuOpen && (
+                                            <motion.div {...dropdownAnimation} className="absolute top-full right-0 mt-2 z-50 flex flex-col p-2 bg-surface dark:bg-dark-surface border border-border dark:border-dark-border rounded-lg shadow-2xl w-48">
+                                                <button onClick={handleRenameClick} className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"><Pencil size={16} /> Rename Project</button>
+                                                <button onClick={saveProjectToFile} className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"><Download size={16} /> Save to File</button>
+                                                <div className="my-1 h-px bg-border dark:bg-dark-border" />
+                                                <button onClick={openSettingsModal} className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"><Settings size={16} /> Project Settings</button>
+                                                <div className="my-1 h-px bg-border dark:bg-dark-border" />
+                                                <button onClick={handleDeleteProject} className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-red-500/10 text-red-500 transition-colors"><Trash2 size={16} /> Delete Project</button>
                                             </motion.div>
                                         )}
                                     </AnimatePresence>
                                 </div>
-                            )}
-                            <div className="relative" ref={actionsMenuRef}>
-                                <button onClick={() => setIsActionsMenuOpen(!isActionsMenuOpen)} className="p-2 rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors">
-                                    <MoreHorizontal size={18} />
-                                </button>
-                                <AnimatePresence>
-                                    {isActionsMenuOpen && (
-                                        <motion.div {...dropdownAnimation} className="absolute top-full right-0 mt-2 z-50 flex flex-col p-2 bg-surface dark:bg-dark-surface border border-border dark:border-dark-border rounded-lg shadow-2xl w-48">
-                                            <button onClick={handleRenameClick} className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"><Pencil size={16} /> Rename Project</button>
-                                            <button onClick={saveProjectToFile} className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"><Download size={16} /> Save to File</button>
-                                            <div className="my-1 h-px bg-border dark:bg-dark-border" />
-                                            <button onClick={openSettingsModal} className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-background dark:hover:bg-dark-background transition-colors"><Settings size={16} /> Project Settings</button>
-                                            <div className="my-1 h-px bg-border dark:bg-dark-border" />
-                                            <button onClick={handleDeleteProject} className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-red-500/10 text-red-500 transition-colors"><Trash2 size={16} /> Delete Project</button>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
                             </div>
-                        </div>
-                    )
+                        )
+                    )                    
                 )}
             </div>
 
