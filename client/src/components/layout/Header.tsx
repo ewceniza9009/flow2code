@@ -6,7 +6,7 @@ import { Project } from '@/types/project';
 import { generateCodeAndSetFiles, checkAndSuggest } from '@/api/api';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence, Transition } from 'framer-motion';
-import { AutosizeInput } from './AutoSizeInput';
+import { AutosizeInput } from './AutosizeInput';
 
 interface HeaderProps {
     toggleLeftPanel: () => void;
